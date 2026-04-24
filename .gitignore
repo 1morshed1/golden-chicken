@@ -1,0 +1,112 @@
+# ------------------------------------------------------------
+# Golden Chicken (monorepo) — backend (Python/FastAPI) + frontend (Flutter)
+# ------------------------------------------------------------
+
+# --- OS / editor / IDE ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+.idea/
+.vscode/
+*.iml
+
+# Cursor / local tooling
+.cursor/
+
+# --- Secrets / environment files ---
+.env
+.env.*
+!.env.example
+!.env.sample
+
+*.pem
+*.key
+*.p12
+*.pfx
+
+# --- Logs / temp ---
+*.log
+logs/
+tmp/
+temp/
+
+# --- Python (backend) ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyre/
+.tox/
+.nox/
+
+.coverage
+coverage.xml
+htmlcov/
+*.cover
+*.py,cover
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+
+# Jupyter / notebooks
+.ipynb_checkpoints/
+
+# Local DB / caches (if used)
+*.sqlite3
+*.db
+
+# --- Flutter / Dart (frontend) ---
+.dart_tool/
+.packages
+.pub-cache/
+
+# Flutter build outputs
+build/
+
+# Android
+android/.gradle/
+android/local.properties
+android/key.properties
+*.jks
+*.keystore
+
+# iOS / macOS
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/App.framework
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/ephemeral/
+
+macos/Pods/
+
+# Flutter plugin registries
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# --- Node (in case tooling gets added later) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Docker / compose local state ---
+**/.docker/
+**/docker-data/
+**/volumes/
+

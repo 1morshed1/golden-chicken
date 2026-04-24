@@ -3,19 +3,30 @@
 ## Current state (as of 2026-04-24)
 - **Sprint 1 scaffold: COMPLETE.**
 - **Sprint 2 (Auth + Production Tracking): COMPLETE.**
-- Docker Compose stack defined (Postgres+pgvector, Redis, MinIO, Celery worker + beat).
+- **Sprint 3 (AI Engine + Chat + Health Tabs): COMPLETE.**
+- Docker Compose stack validated and running (all 6 services healthy).
+- Initial Alembic migration applied. Health tabs seeded (6 diseases).
 
-## What was just completed (Sprint 2)
-- **Auth system**: AuthService (register, login, refresh token rotation, logout with Redis JTI blacklist) + SessionRepository + auth API routes (`/api/v1/auth/register|login|refresh|logout`).
-- **User profile**: UserService (update profile, avatar upload to S3/MinIO) + user API routes (`/api/v1/users/me`, `/api/v1/users/me/avatar`).
-- **Farm & Shed CRUD**: FarmService with ownership checks + farm API routes (`/api/v1/farms` CRUD, `/api/v1/farms/{id}/sheds` CRUD, `/api/v1/sheds/{id}` update/delete). Soft delete for DELETE ops.
-- **Production tracking**: ProductionService with egg/chicken record CRUD, date-range queries, trend calculation (7d/30d/90d), farm overview. Production API routes (`/api/v1/sheds/{id}/eggs|chickens`, `/api/v1/sheds/{id}/trends/eggs|mortality|feed`, `/api/v1/farms/{id}/trends/overview`).
-- **Rate limiting**: Redis-based rate limiter middleware (auth: 10/min/IP, default: 60/min/user, AI: 20/min/user).
-- **Production schemas**: Full Pydantic schemas for egg records, chicken records, trends, and farm overview.
+## What was just completed (Sprint 3)
+- **Gemini client**: `app/ai/gemini_client.py` — text generation, streaming, image analysis, intent classification (Flash Lite), session title generation.
+- **System prompts**: `app/ai/prompts/system_prompt.py` — EN + BN bilingual prompts with safety guardrails.
+- **Intent classification**: `app/ai/intent.py` — two-stage (keyword match → Gemini Lite fallback), 9-category taxonomy.
+- **Chat CRUD**: ChatSessionRepository + ChatMessageRepository + ChatService with full pipeline (save → classify → history → generate → persist → auto-title).
+- **SSE streaming**: `POST /chat/sessions/{id}/messages/stream` — server-sent events for real-time AI response streaming.
+- **Chat routes**: `app/api/v1/chat.py` — session CRUD, message send (sync + stream), message feedback.
+- **Health tabs**: HealthTabRepository + routes (`GET /health-tabs`, `GET /health-tabs/{id}`, `POST /health-tabs/{id}/ask`) + seed script with 6 diseases (Newcastle, AI, Marek's, Coccidiosis, IB, Fowl Pox).
+- **Infra fixes**: Docker context switched from Desktop to Engine, `.env` updated for container networking (postgres/redis/minio hostnames), `pydantic[email]` added, bcrypt pinned < 5.0 for passlib compat.
+
+## What was just completed (post-Sprint 3)
+- **Gemini API key** set and **end-to-end chat verified** — sync and SSE streaming both working.
+- **Model switch**: Changed from preview models (gemini-3-flash-preview) to stable GA models (gemini-2.0-flash, gemini-2.0-flash-lite) to avoid 503 high-demand errors.
+- **Streaming fix**: `generate_content_stream` needed `await` before `async for` (SDK API difference).
+- **Intent classification** verified working — Bangla query correctly classified as `egg_production`.
+- **Bilingual responses** verified — AI responds in Bangla when language=bn, with Bangladesh-specific context.
+- **Knowledge base**: 10 comprehensive markdown documents created in `knowledge_base/raw/` covering diseases, vaccination, feed, biosecurity, weather, breeds, egg production, economics, medicines, and emergency first aid — all Bangladesh-specific.
 
 ## Immediate next steps
-1. **Validate Docker stack** and run initial Alembic migration.
-2. Begin **Sprint 3**: Gemini AI client wrapper, system prompts, intent classification, chat session CRUD, SSE streaming, health tabs.
+1. Begin **Sprint 4**: RAG ingestion pipeline (ingest knowledge base into pgvector), image diagnosis, task management CRUD.
 
 ## Decisions currently in effect
 - **Modular monolith** architecture for v1.
@@ -24,3 +35,4 @@
 - **Bangla/English** language preference supported end-to-end.
 - All models created upfront so Alembic can generate the full initial migration.
 - Rate limiting uses Redis sliding window counter per endpoint group.
+- Docker `.env` uses container service names (postgres/redis/minio), not localhost.

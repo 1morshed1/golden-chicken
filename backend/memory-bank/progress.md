@@ -29,18 +29,33 @@
   - Updated `app/core/middleware.py` with rate limit middleware
   - Updated `app/api/router.py` with all new routers
 
+- **Sprint 3 (AI Engine + Chat + Health Tabs) — COMPLETE** (as of 2026-04-24):
+  - `app/ai/gemini_client.py` — GeminiClient (text, stream, vision, intent classification, title gen)
+  - `app/ai/prompts/system_prompt.py` — EN + BN system prompts with safety guardrails
+  - `app/ai/intent.py` — two-stage intent classification (keyword → Flash Lite), 9 categories
+  - `app/schemas/chat.py` — session/message request/response schemas
+  - `app/schemas/health.py` — health tab response + ask request schemas
+  - `app/repositories/chat_repository.py` — ChatSession + ChatMessage repositories
+  - `app/repositories/health_repository.py` — HealthTab repository
+  - `app/services/chat_service.py` — full chat pipeline (save → classify → history → generate → persist → auto-title)
+  - `app/api/v1/chat.py` — session CRUD, sync + SSE streaming message send, feedback
+  - `app/api/v1/health_tabs.py` — list/get tabs, POST ask (creates session + sends prefilled prompt)
+  - `app/utils/seed_health_tabs.py` — seed 6 diseases (Newcastle, AI, Marek's, Coccidiosis, IB, Fowl Pox)
+  - Updated `app/api/router.py` with chat + health_tabs routers
+  - Infra: Docker context fix, .env container networking, pydantic[email], bcrypt < 5 pin
+
 ## What's left to build (high-level)
-- [ ] Run Docker stack and validate
-- [ ] Generate initial Alembic migration
+- [x] Run Docker stack and validate
+- [x] Generate initial Alembic migration
 - [x] Auth service + endpoints (register, login, refresh, logout)
 - [x] Farm/Shed CRUD endpoints
 - [x] Production record endpoints + trend calculation
 - [x] User profile CRUD + avatar upload
 - [x] Rate limiting middleware
+- [x] Chat subsystem (sessions/messages, SSE streaming, feedback, titles)
+- [x] Gemini AI client wrapper + system prompts + intent classification
+- [x] Health tabs seed + `/health/ask` integration
 - [ ] Social auth (Google/Facebook — deferred, needs Firebase setup)
-- [ ] Chat subsystem (sessions/messages, SSE streaming, feedback, titles)
-- [ ] Gemini AI client wrapper + system prompts + intent classification
-- [ ] Health tabs seed + `/health/ask` integration
 - [ ] RAG ingestion + vector search + reranking
 - [ ] Image diagnosis endpoint + media pipeline
 - [ ] Weather + market integrations
@@ -49,11 +64,20 @@
 - [ ] Live AI WebSocket gateway
 - [ ] Tests + security hardening + deployment
 
+- **Post-Sprint 3 validation** (as of 2026-04-24):
+  - Gemini API key configured and end-to-end chat verified (sync + SSE streaming)
+  - Switched from preview models to stable GA: gemini-2.0-flash, gemini-2.0-flash-lite, gemini-2.0-flash-live-001
+  - Fixed streaming bug: `generate_content_stream` needs `await` before `async for`
+  - Intent classification working (Bangla → egg_production correctly classified)
+  - Bilingual AI responses working (EN + BN)
+  - Knowledge base created: 10 documents in `knowledge_base/raw/` (diseases, vaccination, feed, biosecurity, weather, breeds, egg production, economics, medicines, emergency first aid)
+
 ## Current milestone snapshot
 - **Sprint 1**: COMPLETE (scaffold + models + core infra + health checks)
 - **Sprint 2**: COMPLETE (auth + production tracking + farm CRUD + rate limiting)
-- **Sprint 3**: NEXT (AI engine + chat + health tabs)
-- Sprints 4–8 remain per the plan.
+- **Sprint 3**: COMPLETE (AI engine + chat + SSE streaming + health tabs + knowledge base)
+- **Sprint 4**: NEXT (RAG ingestion + image diagnosis + task management)
+- Sprints 5–8 remain per the plan.
 
 ## Known issues / risks
 - Market price scraping reliability and legal/terms constraints.

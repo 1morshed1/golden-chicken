@@ -1,31 +1,30 @@
 # Active Context — Current Work Focus
 
-## Current state (as of Apr 2026)
-- The repository contains an implementation plan document: `GoldenChicken_Backend_Implementation_Plan.md`.
-- A full target architecture and module layout is defined in that plan (FastAPI + SQLAlchemy async + Postgres/pgvector + Redis + MinIO + Celery + Gemini AI).
+## Current state (as of 2026-04-24)
+- **Sprint 1 scaffold is complete.** The full project structure, config, core infra, models, schemas, repositories, routers, and Alembic are in place.
+- Docker Compose stack defined (Postgres+pgvector, Redis, MinIO, Celery worker + beat).
 
-## What we are doing now
-- Establishing the **Memory Bank** documentation so future sessions can continue work reliably.
+## What was just completed
+- Project scaffold matching the implementation plan's folder structure.
+- `app/config.py` with all settings (Pydantic BaseSettings).
+- `app/core/*`: database, redis, storage, security (JWT + bcrypt), dependencies (auth), exceptions, exception handlers, middleware (CORS + request ID), pagination, constants.
+- All 12 SQLAlchemy models: User, UserSession, Farm, Shed, EggRecord, ChickenRecord, FarmTask, ChatSession, ChatMessage, HealthTab, MarketPrice, FarmInsight, KnowledgeChunk, WeatherCache.
+- Pydantic schemas: common (response envelope), auth, user, farm.
+- Repositories: base (generic CRUD), user, farm + shed.
+- FastAPI app factory (`app/main.py`) with lifespan, structlog, Sentry, middleware, exception handlers.
+- API router with health check endpoints (`/api/v1/health`, `/api/v1/health/ready`).
+- Alembic async migration setup.
+- Celery app stub.
+- Docker: `Dockerfile`, `Dockerfile.worker`, `docker-compose.yml`.
 
-## Immediate next steps (once implementation begins)
-- Scaffold backend to match the planned structure:
-  - `app/main.py` app factory + lifespan
-  - `app/config.py`, `app/core/*` (db/redis/security/deps/exceptions/middleware)
-  - `app/models/*`, `app/schemas/*`, `app/repositories/*`, `app/services/*`
-  - `app/api/v1/*` endpoints and router aggregation
-  - `app/ai/*` (Gemini clients, prompts, RAG, live session manager)
-  - `app/workers/*` Celery app and tasks
-- Set up Docker Compose and local dependencies (Postgres pgvector, Redis, MinIO).
-- Implement Sprint 1 deliverables first (foundation + farm domain + health checks + logging).
+## Immediate next steps
+1. **Copy `.env.example` → `.env`** and run `docker compose up` to validate the stack starts.
+2. Run first Alembic migration: `alembic revision --autogenerate -m "initial_schema"` then `alembic upgrade head`.
+3. Begin **Sprint 2**: auth service (register, login, refresh, logout), farm/shed CRUD endpoints, production record endpoints + trend service.
 
 ## Decisions currently in effect
 - **Modular monolith** architecture for v1.
 - **JWT access/refresh** with rotation and Redis blacklist.
 - **SSE** for chat streaming and **WebSocket** for Live AI.
 - **Bangla/English** language preference supported end-to-end.
-
-## Open questions / watch-outs (to validate during implementation)
-- Whether the actual repo already includes some scaffold/code differing from the plan (if so, reconcile rather than rewrite).
-- Final choices for market data sources (API vs scraping reliability).
-- OCR/system package availability for ingestion pipeline in target deployment.
-
+- All models created upfront (not just Sprint 1 entities) so Alembic can generate the full initial migration.

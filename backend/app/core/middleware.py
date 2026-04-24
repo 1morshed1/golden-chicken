@@ -5,6 +5,7 @@ from fastapi import FastAPI, Request, Response
 from starlette.middleware.cors import CORSMiddleware
 
 from app.config import settings
+from app.core.rate_limit import check_rate_limit
 
 logger = structlog.get_logger()
 
@@ -26,3 +27,8 @@ def setup_middleware(app: FastAPI) -> None:
         response: Response = await call_next(request)
         response.headers["X-Request-ID"] = request_id
         return response
+
+    @app.middleware("http")
+    async def rate_limit_middleware(request: Request, call_next) -> Response:
+        await check_rate_limit(request)
+        return await call_next(request)

@@ -1,30 +1,26 @@
 # Active Context — Current Work Focus
 
 ## Current state (as of 2026-04-24)
-- **Sprint 1 scaffold is complete.** The full project structure, config, core infra, models, schemas, repositories, routers, and Alembic are in place.
+- **Sprint 1 scaffold: COMPLETE.**
+- **Sprint 2 (Auth + Production Tracking): COMPLETE.**
 - Docker Compose stack defined (Postgres+pgvector, Redis, MinIO, Celery worker + beat).
 
-## What was just completed
-- Project scaffold matching the implementation plan's folder structure.
-- `app/config.py` with all settings (Pydantic BaseSettings).
-- `app/core/*`: database, redis, storage, security (JWT + bcrypt), dependencies (auth), exceptions, exception handlers, middleware (CORS + request ID), pagination, constants.
-- All 12 SQLAlchemy models: User, UserSession, Farm, Shed, EggRecord, ChickenRecord, FarmTask, ChatSession, ChatMessage, HealthTab, MarketPrice, FarmInsight, KnowledgeChunk, WeatherCache.
-- Pydantic schemas: common (response envelope), auth, user, farm.
-- Repositories: base (generic CRUD), user, farm + shed.
-- FastAPI app factory (`app/main.py`) with lifespan, structlog, Sentry, middleware, exception handlers.
-- API router with health check endpoints (`/api/v1/health`, `/api/v1/health/ready`).
-- Alembic async migration setup.
-- Celery app stub.
-- Docker: `Dockerfile`, `Dockerfile.worker`, `docker-compose.yml`.
+## What was just completed (Sprint 2)
+- **Auth system**: AuthService (register, login, refresh token rotation, logout with Redis JTI blacklist) + SessionRepository + auth API routes (`/api/v1/auth/register|login|refresh|logout`).
+- **User profile**: UserService (update profile, avatar upload to S3/MinIO) + user API routes (`/api/v1/users/me`, `/api/v1/users/me/avatar`).
+- **Farm & Shed CRUD**: FarmService with ownership checks + farm API routes (`/api/v1/farms` CRUD, `/api/v1/farms/{id}/sheds` CRUD, `/api/v1/sheds/{id}` update/delete). Soft delete for DELETE ops.
+- **Production tracking**: ProductionService with egg/chicken record CRUD, date-range queries, trend calculation (7d/30d/90d), farm overview. Production API routes (`/api/v1/sheds/{id}/eggs|chickens`, `/api/v1/sheds/{id}/trends/eggs|mortality|feed`, `/api/v1/farms/{id}/trends/overview`).
+- **Rate limiting**: Redis-based rate limiter middleware (auth: 10/min/IP, default: 60/min/user, AI: 20/min/user).
+- **Production schemas**: Full Pydantic schemas for egg records, chicken records, trends, and farm overview.
 
 ## Immediate next steps
-1. **Copy `.env.example` → `.env`** and run `docker compose up` to validate the stack starts.
-2. Run first Alembic migration: `alembic revision --autogenerate -m "initial_schema"` then `alembic upgrade head`.
-3. Begin **Sprint 2**: auth service (register, login, refresh, logout), farm/shed CRUD endpoints, production record endpoints + trend service.
+1. **Validate Docker stack** and run initial Alembic migration.
+2. Begin **Sprint 3**: Gemini AI client wrapper, system prompts, intent classification, chat session CRUD, SSE streaming, health tabs.
 
 ## Decisions currently in effect
 - **Modular monolith** architecture for v1.
 - **JWT access/refresh** with rotation and Redis blacklist.
 - **SSE** for chat streaming and **WebSocket** for Live AI.
 - **Bangla/English** language preference supported end-to-end.
-- All models created upfront (not just Sprint 1 entities) so Alembic can generate the full initial migration.
+- All models created upfront so Alembic can generate the full initial migration.
+- Rate limiting uses Redis sliding window counter per endpoint group.

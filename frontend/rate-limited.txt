@@ -1,0 +1,1018 @@
+● Now register all auth dependencies in DI and update main.dart to provide AuthBloc globally.
+                                                     
+  Read 1 file (ctrl+o to expand)                          
+                                                     
+● Write(lib/core/di/injection_container.dart)             
+  ⎿  Added 51 lines, removed 1 line                       
+       1  import 'package:connectivity_plus/connectivity_plus.dart';                                                    
+       2 +import 'package:dio/dio.dart';                                                                                
+       3  import 'package:flutter_secure_storage/flutter_secure_storage.dart';                                          
+       4  import 'package:get_it/get_it.dart';                                                                          
+       5  import 'package:golden_chicken/core/network/api_client.dart';                                                 
+       6  import 'package:golden_chicken/core/network/network_info.dart';                                             
+       7 +import 'package:golden_chicken/features/auth/data/datasources/auth_local_datasource.dart';                    
+       8 +import 'package:golden_chicken/features/auth/data/datasources/auth_remote_datasource.dart';                   
+       9 +import 'package:golden_chicken/features/auth/data/repositories/auth_repository_impl.dart';                    
+      10 +import 'package:golden_chicken/features/auth/domain/repositories/auth_repository.dart';                       
+      11 +import 'package:golden_chicken/features/auth/domain/usecases/login_usecase.dart';                             
+      12 +import 'package:golden_chicken/features/auth/domain/usecases/logout_usecase.dart';                            
+      13 +import 'package:golden_chicken/features/auth/domain/usecases/refresh_token_usecase.dart';                   
+      14 +import 'package:golden_chicken/features/auth/domain/usecases/register_usecase.dart';                   
+      15 +import 'package:golden_chicken/features/auth/presentation/bloc/auth_bloc.dart';                        
+      16  import 'package:shared_preferences/shared_preferences.dart';
+      17  
+      18  final sl = GetIt.instance;
+      19  
+      20  Future<void> initDependencies() async {
+      21    final sharedPrefs = await SharedPreferences.getInstance();
+      22 +                                                                                                       
+      23 +  // External                                                                                          
+      24    sl
+      25      ..registerLazySingleton(() => sharedPrefs)
+      26      ..registerLazySingleton(() => const FlutterSecureStorage())
+      15 -    ..registerLazySingleton(Connectivity.new)                                                          
+      27 +    ..registerLazySingleton(Connectivity.new);                                                         
+      28 +                                                                                                       
+      29 +  // Core                                                                                              
+      30 +  sl                                                                                                   
+      31      ..registerLazySingleton<NetworkInfo>(
+      32        () => NetworkInfoImpl(sl<Connectivity>()),
+      33      )
+      34      ..registerLazySingleton(() => ApiClient(secureStorage: sl()))
+      35      ..registerLazySingleton(() => sl<ApiClient>().dio);
+      36 +                                                                                                       
+      37 +  // Auth                                                                                              
+      38 +  _initAuth();                                                                                         
+      39  }
+      40 +                                                                                                       
+      41 +void _initAuth() {                                                                                     
+      42 +  sl                                                                                                   
+      43 +    // Datasources                                                                                     
+      44 +    ..registerLazySingleton<AuthRemoteDatasource>(                                                     
+      45 +      () => AuthRemoteDatasourceImpl(sl<Dio>()),                                                       
+      46 +    )                                                                                                  
+      47 +    ..registerLazySingleton<AuthLocalDatasource>(                                                      
+      48 +      () => AuthLocalDatasourceImpl(sl<FlutterSecureStorage>()),                                       
+      49 +    )                                                                                                  
+      50 +    // Repository                                                                                      
+      51 +    ..registerLazySingleton<AuthRepository>(                                                           
+      52 +      () => AuthRepositoryImpl(                                                                        
+      53 +        remoteDatasource: sl(),                                                                        
+      54 +        localDatasource: sl(),                                                                         
+      55 +      ),                                                                                               
+      56 +    )                                                                                                  
+      57 +    // Use cases                                                                                       
+      58 +    ..registerLazySingleton(() => LoginUseCase(sl()))                                                  
+      59 +    ..registerLazySingleton(() => RegisterUseCase(sl()))                                               
+      60 +    ..registerLazySingleton(() => LogoutUseCase(sl()))                                                 
+      61 +    ..registerLazySingleton(() => RefreshTokenUseCase(sl()))                                           
+      62 +    // BLoC                                                                                            
+      63 +    ..registerFactory(                                                                                 
+      64 +      () => AuthBloc(                                                                                  
+      65 +        loginUseCase: sl(),                                                                            
+      66 +        registerUseCase: sl(),                                                                         
+      67 +        logoutUseCase: sl(),                                                                           
+      68 +        refreshTokenUseCase: sl(),                                                                     
+      69 +      ),                                                                                               
+      70 +    );                                                                                                 
+      71 +}                                                                                                      
+
+● Now update main.dart to provide AuthBloc globally.     
+                                       
+  Read 1 file (ctrl+o to expand)    
+  ⎿  Found 1 new diagnostic issue in 1 file (ctrl+o to expand)
+                                                              
+● Write(lib/main.dart)                                   
+                                                          
+✻ Registering auth dependencies… (5m 14s · ↓ 23.6k tokens)                                                              
+  ⎿  ◼ Register auth dependencies in DI                                                                                 
+     ◻ Verify build and analysis        
+     ✔ Build auth domain layer                                                                                          
+     ✔ Build auth data layer                                                                                          
+     ✔ Build AuthBloc                                                                                                   
+      … +3 completed                                                                                                    
+                                                                                                                        
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯                                                                                                                       
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+                                                                                                        ⧉ In main.dart  
+  esc to interrupt · ctrl+t to hide tasks                                                           ◐ medium · /effort  
+      22          ),
+      23 +        BlocProvider(create: (_) => sl<AuthBloc>()),                                                   
+      24        ],
+      25        child: const GoldenChickenApp(),
+      26      ),
+
+● Now fix the DI cascade warning.                         
+                                       
+  Read 1 file (ctrl+o to expand)                          
+                                         
+● Update(lib/core/di/injection_container.dart)            
+  ⎿  Added 1 line, removed 5 lines                        
+      20  Future<void> initDependencies() async {                                                                       
+      21    final sharedPrefs = await SharedPreferences.getInstance();
+      22                                                                                                                
+      23 -  // External                                                                                          
+      23    sl                                                                                                          
+      24      ..registerLazySingleton(() => sharedPrefs)                                                              
+      25      ..registerLazySingleton(() => const FlutterSecureStorage())                                               
+      27 -    ..registerLazySingleton(Connectivity.new);                                                                
+      28 -                                                                                                              
+      29 -  // Core                                                                                                     
+      30 -  sl                                                                                                          
+      26 +    ..registerLazySingleton(Connectivity.new)                                                                 
+      27      ..registerLazySingleton<NetworkInfo>(
+      28        () => NetworkInfoImpl(sl<Connectivity>()),
+      29      )
+
+● Now let's verify the build.                             
+                                       
+● Bash(cd "/media/fahim/Softwares/Golden Chicken/frontend" && flutter analyze 2>&1)
+  ⎿  Error: Exit code 1                
+     Analyzing frontend...                                           
+                                                                                                                        
+        info • Use 'const' with the constructor to improve performance • 
+     lib/features/chat/presentation/chat_tab_screen.dart:79:17 • prefer_const_constructors
+        info • Use 'const' with the constructor to improve performance •                                                
+     lib/features/chat/presentation/chat_tab_screen.dart:86:17 • prefer_const_constructors
+                                                                                                                        
+     2 issues found. (ran in 2.0s)       
+                                                                                                                        
+● Just 2 const hints. Let me fix them.                                                                                  
+                                
+  Read 1 file (ctrl+o to expand)                                                                                        
+                                                        
+● Update(lib/features/chat/presentation/chat_tab_screen.dart)
+  ⎿  Added 2 lines, removed 2 lines                          
+      76                children: [                                                                                     
+      77                  const AiStatusCard(),          
+      78                  const SizedBox(height: AppSpacing.md),                                                        
+      79 -                TipBanner(                                                                             
+      79 +                const TipBanner(                                                                              
+      80                    icon: Icons.water_drop,     
+      81                    iconColor: AppColors.info,                                                                  
+      82                    title: 'Water Check',                                                                       
+      83                    subtitle: 'Clean drinkers twice daily',                                                     
+      84                  ),                                                                                            
+      85                  const SizedBox(height: AppSpacing.sm),                                                        
+      86 -                TipBanner(                                                                                    
+      86 +                const TipBanner(                                                                              
+      87                    icon: Icons.shield_outlined,
+      88                    iconColor: AppColors.warning,
+      89                    title: 'Biosec',
+
+● I also need to add const to the TipBanner constructor. 
+                                
+  Read 1 file (ctrl+o to expand)    
+                                                           
+● Constructor is already const. Let me run analysis again.
+                                                         
+● Bash(cd "/media/fahim/Softwares/Golden Chicken/frontend" && flutter analyze 2>&1)
+  ⎿  Analyzing frontend...      
+     No issues found! (ran in 1.3s)                                                                                     
+                                                                                                                        
+● Zero issues. Let me run tests.                                                                                        
+                                                 
+● Bash(cd "/media/fahim/Softwares/Golden Chicken/frontend" && flutter test 2>&1)                                        
+  ⎿  00:00 +0: loading /media/fahim/Softwares/Golden Chicken/frontend/test/widget_test.dart                             
+     00:00 +0: App smoke test placeholder                                                                               
+     00:00 +1: All tests passed!                                                                                        
+                                                                                                                        
+● All clean. Let me verify the final file count.                                                                        
+                                                                                                                        
+  Searched for 1 pattern (ctrl+o to expand)                                                                             
+                                                                                                                        
+● Now let me update the Memory Bank files.               
+                                                                                                                        
+● Write(memory-bank/progress.md)                                                                                        
+  ⎿  Added 31 lines, removed 29 lines                                                                           
+       1  # Progress — Golden Chicken Frontend                                                                          
+       2                                                                                                                
+       3 -## What exists now                                                                                            
+       4 -- **Flutter project scaffold** fully set up with feature-first Clean Architecture folder structure            
+       5 -- **Design system**: AppColors (orange brand palette, semantic colors, dark mode), AppTypography (local       
+         -e-aware via google_fonts — PlusJakartaSans for EN, HindSiliguri for BN), AppSpacing, AppRadius, AppThem       
+         -e (light + dark ThemeData)                                                                                    
+       6 -- **Networking**: Dio ApiClient with Auth/Logging/Error interceptors, Failure types hierarchy, NetworkI       
+         -nfo (connectivity_plus), ApiEndpoints                                                                         
+       7 -- **DI**: get_it service locator registering SharedPreferences, FlutterSecureStorage, Connectivity, Net       
+         -workInfo, ApiClient, Dio                                                                                      
+       8 -- **Routing**: GoRouter with splash → language selection → auth → main shell flow, auth/onboarding guar       
+         -ds, 4-tab ShellRoute (Chat/Health/Market/Profile), RouteNames constants                                
+       9 -- **Localization**: ARB files for EN + BN (45+ keys), LocaleCubit with persistence, ThemeCubit with per
+         -sistence, convenience `context.l10n` extension, l10n.yaml config                                       
+      10 -- **Shared widgets**: AppButton (primary/secondary/text + loading), AppTextField (label/hint/prefix/suf
+         -fix/validation), AppCard, AppLoading, AppErrorWidget (with retry), MainShell (bottom nav bar)          
+      11 -- **Feature screens**: SplashScreen (orange brand, auto-redirect), LanguageSelectionScreen (EN/BN cards
+         -), LoginScreen (+880 phone auth), SignupScreen, and 4 placeholder tab screens (Chat, Health, Market, Pr
+         -ofile)                                                                                                 
+      12 -- **Static analysis**: 0 issues with very_good_analysis                                                
+      13 -- **Tests**: smoke test passing                                                                        
+       3 +## What exists now (56 Dart source files)                                                              
+       4  
+       5 +### Core (from Sprint 1)                                                                               
+       6 +- Design system: AppColors, AppTypography (google_fonts), AppSpacing, AppRadius, AppTheme (light+dark) 
+       7 +- Networking: Dio ApiClient with Auth/Logging/Error interceptors, Failure hierarchy, NetworkInfo, ApiEn
+         +dpoints                                                                                                
+       8 +- DI: get_it with all externals, core services, and auth feature fully registered                      
+       9 +- Routing: GoRouter with reactive auth-driven redirects, splash → language → auth → 4-tab shell        
+      10 +- Localization: ARB EN/BN (45+ keys), LocaleCubit, ThemeCubit, `context.l10n` extension                
+      11 +- Shared widgets: AppButton, AppTextField, AppCard, AppLoading, AppErrorWidget, MainShell, AppDrawer   
+      12 +                                                                                                       
+      13 +### Auth feature (Sprint 2)                                                                            
+      14 +- **Domain**: User entity, AuthRepository interface, LoginUseCase, RegisterUseCase, LogoutUseCase, Refr
+         +eshTokenUseCase                                                                                        
+      15 +- **Data**: UserModel (JSON), AuthResponseModel, AuthRemoteDatasource (Dio — login/register/refresh/log
+         +out/getUser), AuthLocalDatasource (SecureStorage — tokens + cached user), AuthRepositoryImpl (Either er
+         +ror handling, DioException mapping)                                                                    
+      16 +- **Presentation**: AuthBloc (CheckAuth/Login/Register/Logout/Refresh events → Initial/Loading/Authenti
+         +cated/Unauthenticated/Error states), LoginScreen (form validation, phone→email mapping, BLoC-driven loa
+         +ding/error), SignupScreen (same), PasswordField widget (visibility toggle)                             
+      17 +                                                                                                       
+      18 +### Home/Chat tab (Sprint 2)                                                                           
+      19 +- Full home screen: orange AppBar with user name + loyalty badge + notifications, Golden AI status card
+         + (online indicator), tip banners (Water Check, Biosec), AI message bubble, quick action chips (Bangla p
+         +rompts), LIVE AI gradient button, chat input bar (camera + text + send), left navigation drawer (Home, 
+         +Flock Overview, Health Center, Market, Profile, Settings, Help, Logout with auth state)                
+      20 +                                                                                                       
+      21 +### Other tab placeholders                                                                             
+      22 +- HealthTabScreen, MarketTabScreen, ProfileTabScreen (placeholder content)                             
+      23 +                                                                                                       
+      24 +### Onboarding                                                                                         
+      25 +- SplashScreen (brand splash → auth check → redirect), LanguageSelectionScreen (EN/BN cards)           
+      26 +                                                                                                       
+      27  ## Sprint completion status
+      16 -- **Sprint 1**: ✅ COMPLETE — App shell with 4-tab navigation, design system, networking, DI, routing, 
+         -localization, shared widgets                                                                           
+      17 -- **Sprint 2**: Not started (Onboarding + Auth + Home — full implementation with BLoCs, actual API inte
+         -gration)                                                                                               
+      18 -- **Sprint 3**: Not started                                                                            
+      28 +- **Sprint 1**: ✅ COMPLETE                                                                            
+      29 +- **Sprint 2**: ✅ COMPLETE — Full onboarding → auth → home flow                                       
+      30 +- **Sprint 3**: Not started (Chat + Health Center + Production)                                        
+      31  - **Sprint 4**: Not started
+      32  - **Sprint 5**: Not started
+      33  - **Sprint 6–7**: Not started
+      34  
+      23 -## Design coverage captured from `Figma.pdf`                                                           
+      24 -- Splash / brand: "Golden Chicken", "Poultry_AI Assistant"                                             
+      25 -- Language selection: English and Bangla choices                                                       
+      26 -- Auth: Welcome Back, Sign In, Create Account, phone number (`+880`) and password fields               
+      27 -- Golden AI home/chat: online status, Water Check and Biosec tips, quick prompts, chat input, LIVE AI e
+         -ntry point                                                                                             
+      28 -- Live AI states: AI Assistant Live, AI Listening, AI Speaking, Camera Off, processing state           
+      29 -- Flock Overview: total birds, alerts, average age, AI score, weather/temperature alerts, today's feed 
+         -plan                                                                                                   
+      30 -- Health Center: disease/vaccine/emergency/diagnosis tabs, severity badges, symptom counts, Ask AI acti
+         -ons                                                                                                    
+      31 -- Market Insights: Dhaka live prices, egg/meat/feed costs, 7-day trend, AI confidence tip              
+      32 -- Profile: user identity, location, loyalty points, preferences, dark mode, notifications, data/history
+         -, account/help/about/logout                                                                            
+      33 -                                                                                                       
+      35  ## Known issues / watch-outs
+      35 -- Phone-login UI vs backend email/password alignment                                                   
+      36 -- Live AI protocol details need confirmation (audio/video chunk formats, rate limits, close codes like 
+         -**4003**)                                                                                              
+      37 -- Cache TTLs and offline queue rules should be implemented consistently per feature (plan suggests: Hea
+         -lth 24h, Market 30m, etc.)                                                                             
+      38 -- Fonts are loaded via google_fonts package (network download) — for production, bundle font files dire
+         -ctly                                                                                                   
+      36 +- Phone→email mapping: UI collects phone, maps to `{phone}@goldenchicken.ai` for backend. Decide if bac
+         +kend should accept phone directly.                                                                     
+      37 +- Live AI protocol details need confirmation (audio/video formats, close codes)                        
+      38 +- Cache TTLs and offline queues not yet implemented                                                    
+      39 +- Fonts loaded via google_fonts (network) — bundle for production                                      
+      40 +- Tip banners and AI message bubble are static placeholder content                                     
+
+● Write(memory-bank/activeContext.md)
+  ⎿  Added 23 lines, removed 23 lines                                                                           
+       1  # Active Context — Golden Chicken Frontend                                                                    
+       2                                                                                                                
+       3  ## Current focus
+       4 -Sprint 1 is complete. The Flutter project has a working scaffold with 4-tab navigation shell, design sy       
+         -stem, networking layer, DI, routing with guards, localization (EN/BN), and shared widgets.             
+       4 +Sprint 2 is complete. The app has a full onboarding → auth → home flow with BLoC-driven auth state, rea       
+         +ctive routing, form validation, and a Figma-matching home screen.                                      
+       5                                                                                                                
+       6 -**Next up: Sprint 2** — Onboarding + Auth + Home (full implementation with BLoCs, actual API integratio       
+         -n, token storage).                                                                                            
+       6 +**Next up: Sprint 3** — Chat (SSE streaming + message bubbles + image upload), Health Center (disease g       
+         +rid, severity badges, tab filters, Ask AI), and Production (Flock Overview, egg/chicken records).             
+       7  
+       8  ## Most important decisions already made
+       9 -- **Feature-first Clean Architecture**                                                                 
+      10 -- **BLoC** for state management (plus global Auth/Locale/Theme)                                        
+      11 -- **GoRouter** with onboarding/auth guards and a 4-tab shell                                           
+      12 -- **Dio** networking with interceptors                                                                 
+      13 -- **SSE** for chat streaming and **WebSocket** for Live AI                                             
+      14 -- **google_fonts** package for locale-aware typography (PlusJakartaSans for EN, HindSiliguri for BN)   
+      15 -- **Hive + secure storage** for caching and tokens                                                     
+      16 -- **Bangla/English localization** via ARB + locale-aware typography                                    
+      17 -- **Design system tokens** (colors/typography/spacing/radius) centralized in `core/constants/` and wire
+         -d into `ThemeData` (light + dark)                                                                      
+       9 +- **Feature-first Clean Architecture** fully demonstrated in auth feature                              
+      10 +- **AuthBloc** is global, drives router redirects via ValueNotifier                                    
+      11 +- **Phone→email mapping**: UI shows phone, maps to `{phone}@goldenchicken.ai` for backend email+passwor
+         +d auth                                                                                                 
+      12 +- **Either<Failure, T>** for all repository returns, DioException mapped to typed Failures             
+      13 +- **Token rotation**: access+refresh stored in SecureStorage, refresh triggers token rotation          
+      14 +- **Drawer navigation** provides access to all screens beyond the 4 bottom tabs                        
+      15  
+      19 -## Immediate next steps (Sprint 2)                                                                     
+      20 -1. Implement AuthBloc with login/register use cases                                                    
+      21 -2. Wire login/signup screens to actual API via repository pattern                                      
+      22 -3. Token storage (access + refresh) in FlutterSecureStorage                                            
+      23 -4. Route guard integration with real auth state                                                        
+      24 -5. Splash screen with proper bootstrap logic (check token validity)                                    
+      25 -6. Home screen: AI chat card, quick action buttons, drawer navigation                                  
+      26 -7. HomeBloc with flock summary data                                                                    
+      16 +## Immediate next steps (Sprint 3)                                                                     
+      17 +1. ChatBloc with SSE streaming message lifecycle                                                       
+      18 +2. Chat screen: message bubbles (user/AI), input bar wired to send, streaming indicator                
+      19 +3. Image upload for diagnosis (camera/gallery → crop → multipart)                                      
+      20 +4. Health Center screen: disease grid, severity badges, tab filter row (Diseases/Vaccines/Emergency/Dia
+         +gnosis)                                                                                                
+      21 +5. HealthBloc with disease catalog from API                                                            
+      22 +6. "Ask AI" → opens chat with prefilled prompt                                                         
+      23 +7. Flock Overview screen: stat cards, feed plan, alerts                                                
+      24 +8. Egg/chicken record entry forms                                                                      
+      25 +9. ProductionBloc                                                                                      
+      26  
+      28 -## Known open questions / risks to resolve early                                                       
+      29 -- **Auth UI vs backend**: UI indicates phone-based auth, but plan notes backend is email+password; deci
+         -de mapping or align API.                                                                               
+      30 -- **Live AI**: audio formats (PCM 16kHz record, PCM 24kHz playback), frame cadence (≤ ~1 FPS JPEG), and
+         - backend expectations must be verified; handle backend guardrail close code **4003** with user-friendly
+         - messages.                                                                                             
+      31 -- **Offline queues**: define which mutations must be queued and conflict resolution strategy.          
+      27 +## Known open questions / risks                                                                        
+      28 +- SSE streaming: need to handle partial chunks, reconnection, and `event: done` signal                 
+      29 +- Image compression to max 1MB before upload                                                           
+      30 +- Health tabs API uses `health-tabs` prefix (not `health`)                                             
+      31 +- Production records: offline queue for egg/chicken entries when offline                               
+
+  Read 1 file, recalled 1 memory, wrote 2 memories (ctrl+o to expand)       
+                                                                                                                
+● Sprint 2 is complete. Here's what was built:
+                                                                                                                        
+  ┌──────────────┬──────────────────────────────────────────────────────────────────────────────────────────────────┐   
+  │    Layer     │                                           What's in it                                           │   
+  ├──────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────┤   
+  │ Auth Domain  │ User entity, AuthRepository interface, 4 use cases (Login, Register, Logout, RefreshToken)       │   
+  ├──────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────┤   
+  │ Auth Data    │ UserModel + AuthResponseModel (JSON), RemoteDatasource (Dio API calls), LocalDatasource          │   
+  │              │ (SecureStorage tokens + cached user), AuthRepositoryImpl (Either error handling)                 │   
+  ├──────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────┤   
+  │ AuthBloc     │ 5 events (CheckAuth, Login, Register, Logout, Refresh) → 5 states (Initial, Loading,             │   
+  │              │ Authenticated, Unauthenticated, Error)                                                           │ 
+  ├──────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────┤   
+  │ Login/Signup │ Form validation, phone→email mapping for backend, password visibility toggle, BLoC-driven        │ 
+  │              │ loading/error with SnackBar feedback                                                             │   
+  ├──────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────┤   
+  │ Router       │ Reactive auth-driven redirects via ValueNotifier — router rebuilds on auth state changes         │
+  │ Guards       │                                                                                                  │   
+  ├──────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Splash       │ Brand splash → 2s delay → auth check → auto-redirect                                             │   
+  ├──────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────┤   
+  │ Home Screen  │ Orange AppBar (user name + loyalty badge + notifications), Golden AI status card, tip banners,   │
+  │              │ AI message bubble, quick action chips (Bangla), LIVE AI button, chat input bar                   │   
+  ├──────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ Drawer       │ Left nav with Home, Flock Overview, Health Center, Market, Profile, Settings, Help, Logout       │   
+  ├──────────────┼──────────────────────────────────────────────────────────────────────────────────────────────────┤   
+  │ DI           │ All auth dependencies registered (datasources → repository → use cases → BLoC)                   │
+  └──────────────┴──────────────────────────────────────────────────────────────────────────────────────────────────┘   
+                  
+  Result: flutter analyze — 0 issues, flutter test — passing. 56 total Dart source files.                               
+                  
+  Next is Sprint 3 (Chat with SSE streaming, Health Center with disease grid, and Production tracking). Ready when you  
+  are.            
+                                                                                                                        
+✻ Baked for 7m 39s                      
+                                                                                                                
+❯ initiate sprint 3                                                                                                     
+                                                                                                                        
+● Let me review the Sprint 3 scope from the implementation plan.                                                        
+                                                                                                                        
+  Read 1 file (ctrl+o to expand)    
+                                                                                                                        
+● Good, I have the full picture. Sprint 3 is a big one — Chat with SSE streaming, Health Center, and Production/Flock
+  Overview. Let me create tasks and start building.                                                                     
+                                                                 
+✶ Orchestrating… (30s · ↓ 698 tokens · thinking more with medium effort)                                                
+  ⎿  ◻ Build chat domain + data layers                                                                                  
+     ◻ Build ChatBloc and chat screen                                                                                   
+     ◻ Build health center domain + data layers                                                                         
+     ◻ Build HealthBloc and health center screen                                                                        
+     ◻ Build production domain + data layers                                                                            
+                                                                                                                        
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯                                                                                                                       
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  esc to interrupt · ctrl+t to hide tasks
+
+● Let me review the Sprint 3 scope from the implementation plan.
+
+  Read 1 file (ctrl+o to expand)
+
+● Good, I have the full picture. Sprint 3 is a big one — Chat with SSE streaming, Health Center, and Production/Flock
+  Overview. Let me create tasks and start building.
+
+● Starting with the chat feature — domain and data layers with SSE streaming.                   
+                                      
+● Write(lib/features/chat/domain/entities/chat_message.dart)                                         
+  ⎿  Wrote 54 lines to lib/features/chat/domain/entities/chat_message.dart
+       1 import 'package:equatable/equatable.dart';                                                                     
+       2                                       
+       3 enum MessageRole { user, ai }                                                                                  
+       4                                                                                                                
+       5 class ChatMessage extends Equatable {                                                                          
+       6   const ChatMessage({                                                                                          
+       7     required this.id,                                                                                          
+       8     required this.sessionId,                      
+       9     required this.role,                                                                                        
+      10     required this.content,                        
+     … +44 lines (ctrl+o to expand)                                                                                     
+                              
+● Write(lib/features/chat/domain/entities/chat_session.dart)                                                            
+  ⎿  Wrote 20 lines to lib/features/chat/domain/entities/chat_session.dart
+       1 import 'package:equatable/equatable.dart';                                                                     
+       2                                
+       3 class ChatSession extends Equatable {                                                                          
+       4   const ChatSession({          
+       5     required this.id,                                                                                          
+       6     required this.title,                    
+       7     required this.createdAt,
+       8     this.lastMessageAt,                           
+       9     this.messageCount = 0,             
+      10   });                                             
+     … +10 lines (ctrl+o to expand)
+                                                           
+● Write(lib/features/chat/domain/repositories/chat_repository.dart)                                                     
+  ⎿  Wrote 30 lines to lib/features/chat/domain/repositories/chat_repository.dart
+      1 import 'package:dartz/dartz.dart';                                                                              
+      2 import 'package:golden_chicken/core/network/api_exceptions.dart';
+      3 import 'package:golden_chicken/features/chat/domain/entities/chat_message.dart';                                
+      4 import 'package:golden_chicken/features/chat/domain/entities/chat_session.dart';
+      5                                                                                                                 
+      6 abstract class ChatRepository { 
+      7   Future<Either<Failure, ChatSession>> createSession();                                                         
+      8                                                 
+      9   Future<Either<Failure, List<ChatSession>>> getSessions();
+     … +20 lines (ctrl+o to expand)                        
+                                                
+● Write(lib/features/chat/domain/usecases/create_new_chat.dart)
+  ⎿  Wrote 12 lines to lib/features/chat/domain/usecases/create_new_chat.dart
+      1 import 'package:dartz/dartz.dart';                      
+      2 import 'package:golden_chicken/core/network/api_exceptions.dart';                                               
+      3 import 'package:golden_chicken/features/chat/domain/entities/chat_session.dart';
+      4 import 'package:golden_chicken/features/chat/domain/repositories/chat_repository.dart';                         
+      5                                                                                                                 
+      6 class CreateNewChat {           
+      7   const CreateNewChat(this._repository);
+      8                                        
+      9   final ChatRepository _repository;     
+     … +2 lines (ctrl+o to expand)                      
+                  
+● Write(lib/features/chat/domain/usecases/get_chat_history.dart)
+  ⎿  Wrote 13 lines to lib/features/chat/domain/usecases/get_chat_history.dart                                          
+      1 import 'package:dartz/dartz.dart';                  
+      2 import 'package:golden_chicken/core/network/api_exceptions.dart';                                               
+      3 import 'package:golden_chicken/features/chat/domain/entities/chat_message.dart';                                
+      4 import 'package:golden_chicken/features/chat/domain/repositories/chat_repository.dart';
+      5                              
+      6 class GetChatHistory {                 
+      7   const GetChatHistory(this._repository);
+      8                                                  
+      9   final ChatRepository _repository;
+     … +3 lines (ctrl+o to expand)                         
+                                                                                                                        
+● Write(lib/features/chat/domain/usecases/send_message.dart)
+  ⎿  Wrote 19 lines to lib/features/chat/domain/usecases/send_message.dart                                              
+       1 import 'package:golden_chicken/features/chat/domain/repositories/chat_repository.dart';                        
+       2                                
+       3 class SendMessage {         
+       4   const SendMessage(this._repository);
+       5                                        
+       6   final ChatRepository _repository;         
+       7          
+       8   Stream<String> call({                           
+       9     required String sessionId,                                                                                 
+      10     required String content,
+     … +9 lines (ctrl+o to expand)                                                                                      
+                                         
+● Now the chat data layer — models, datasource with SSE, repository impl.
+                                      
+● Write(lib/features/chat/data/models/chat_message_model.dart)
+  ⎿  Wrote 26 lines to lib/features/chat/data/models/chat_message_model.dart
+       1 import 'package:golden_chicken/features/chat/domain/entities/chat_message.dart';                               
+       2                                       
+       3 class ChatMessageModel extends ChatMessage {                                                                   
+       4   const ChatMessageModel({         
+       5     required super.id,                                                                                         
+       6     required super.sessionId,                     
+       7     required super.role,                                                                                       
+       8     required super.content,                       
+       9     required super.createdAt,                                                                                  
+      10     super.imageUrl,                               
+     … +16 lines (ctrl+o to expand)                                                                                     
+                              
+● Write(lib/features/chat/data/models/chat_session_model.dart)                                                          
+  ⎿  Wrote 23 lines to lib/features/chat/data/models/chat_session_model.dart
+       1 import 'package:golden_chicken/features/chat/domain/entities/chat_session.dart';                               
+       2                                
+       3 class ChatSessionModel extends ChatSession {                                                                   
+       4   const ChatSessionModel({     
+       5     required super.id,      
+       6     required super.title,                         
+       7     required super.createdAt,          
+       8     super.lastMessageAt,                              
+       9     super.messageCount,
+      10   });                                             
+     … +13 lines (ctrl+o to expand)                                                                                     
+                              
+● Write(lib/features/chat/data/datasources/chat_remote_datasource.dart)                                                 
+  ⎿  Wrote 114 lines to lib/features/chat/data/datasources/chat_remote_datasource.dart
+       1 import 'dart:async';
+       2 import 'dart:convert';
+       3
+       4 import 'package:dio/dio.dart';
+       5 import 'package:golden_chicken/core/constants/api_endpoints.dart';
+       6 import 'package:golden_chicken/features/chat/data/models/chat_message_model.dart';
+       7 import 'package:golden_chicken/features/chat/data/models/chat_session_model.dart';
+       8
+       9 abstract class ChatRemoteDatasource {
+      10   Future<ChatSessionModel> createSession();
+     … +104 lines (ctrl+o to expand)
+
+● Write(lib/features/chat/data/repositories/chat_repository_impl.dart)
+  ⎿  Wrote 86 lines to lib/features/chat/data/repositories/chat_repository_impl.dart
+       1 import 'package:dartz/dartz.dart';                                                                             
+       2 import 'package:dio/dio.dart';        
+       3 import 'package:golden_chicken/core/network/api_exceptions.dart';
+       4 import 'package:golden_chicken/features/chat/data/datasources/chat_remote_datasource.dart';
+       5 import 'package:golden_chicken/features/chat/domain/entities/chat_message.dart';
+       6 import 'package:golden_chicken/features/chat/domain/entities/chat_session.dart';
+       7 import 'package:golden_chicken/features/chat/domain/repositories/chat_repository.dart';                        
+       8                                                   
+       9 class ChatRepositoryImpl implements ChatRepository {                                                           
+      10   const ChatRepositoryImpl({required ChatRemoteDatasource remoteDatasource})
+     … +76 lines (ctrl+o to expand)                                                                                     
+  ⎿  Found 1 new diagnostic issue in 1 file (ctrl+o to expand)
+                                                               
+  Read 1 file (ctrl+o to expand)                               
+                                                                   
+● Update(lib/features/chat/data/datasources/chat_remote_datasource.dart)
+  ⎿  Added 6 lines, removed 5 lines                                     
+      76      );                                                                                                        
+      77                                                        
+      78      final stream = response.data!.stream;
+      79 -    var buffer = '';                                                                                          
+      79 +    final sb = StringBuffer();                                                                                
+      80                                                                                                                
+      81      await for (final chunk in stream) {                                                                       
+      82 -      buffer += utf8.decode(chunk);                                                                           
+      83 -      final lines = buffer.split('\n');                                                                       
+      84 -      // Keep the last potentially incomplete line in the buffer                                              
+      85 -      buffer = lines.removeLast();                                                                            
+      82 +      sb.write(utf8.decode(chunk));                                                                           
+      83 +      final lines = sb.toString().split('\n');                                                                
+      84 +      sb                                                                                               
+      85 +        ..clear()                                                                                      
+      86 +        ..write(lines.removeLast());                                                                   
+      87  
+      88        for (final line in lines) {
+      89          if (line.startsWith('event: done')) return;
+
+● Now the ChatBloc and the full chat detail screen.             
+                                      
+● Write(lib/features/chat/presentation/bloc/chat_event.dart) 
+  ⎿  Wrote 45 lines to lib/features/chat/presentation/bloc/chat_event.dart
+       1 import 'package:equatable/equatable.dart';                                                                     
+       2                                       
+       3 sealed class ChatEvent extends Equatable {
+       4   const ChatEvent();                   
+       5                                                                                                                
+       6   @override                               
+       7   List<Object?> get props => [];                                                                               
+       8 }                                                 
+       9                                                                                                                
+      10 final class ChatSessionStarted extends ChatEvent {
+     … +35 lines (ctrl+o to expand)                                                                                     
+                                         
+● Write(lib/features/chat/presentation/bloc/chat_state.dart)
+  ⎿  Wrote 60 lines to lib/features/chat/presentation/bloc/chat_state.dart
+      1 import 'package:equatable/equatable.dart';                                                                      
+      2 import 'package:golden_chicken/features/chat/domain/entities/chat_message.dart';
+      3                                        
+      4 sealed class ChatState extends Equatable {
+      5   const ChatState();                
+      6                                            
+      7   @override            
+      8   List<Object?> get props => [];                   
+      9 }                                                                                                               
+     … +50 lines (ctrl+o to expand)
+                                                                                                                        
+● Write(lib/features/chat/presentation/bloc/chat_bloc.dart)  
+  ⎿  Wrote 159 lines to lib/features/chat/presentation/bloc/chat_bloc.dart
+      1 import 'dart:async';                                                                                            
+      2                                         
+      3 import 'package:flutter_bloc/flutter_bloc.dart';
+      4 import 'package:golden_chicken/features/chat/domain/entities/chat_message.dart';
+      5 import 'package:golden_chicken/features/chat/domain/usecases/create_new_chat.dart';
+      6 import 'package:golden_chicken/features/chat/domain/usecases/get_chat_history.dart';
+      7 import 'package:golden_chicken/features/chat/domain/usecases/send_message.dart';                                
+      8 import 'package:golden_chicken/features/chat/presentation/bloc/chat_event.dart';
+      9 import 'package:golden_chicken/features/chat/presentation/bloc/chat_state.dart';                                
+     … +149 lines (ctrl+o to expand)     
+                                                                                                                        
+✽ Compacting conversation… (3m 47s · ↑ 8.4k tokens)          
+  ⎿  ◼ Build ChatBloc and chat screen
+     ◻ Build health center domain + data layers
+     ◻ Build HealthBloc and health center screen
+     ◻ Build production domain + data layers
+     ◻ Build flock overview and record screens
+      … +2 pending, 1 completed
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯  
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  esc to interrupt · ctrl+t to hide tasks
+
+  ⎿  Read lib/features/chat/presentation/bloc/chat_bloc.dart (160 lines)
+  ⎿  Read lib/features/chat/presentation/bloc/chat_state.dart (61 lines)
+  ⎿  Read lib/features/chat/presentation/bloc/chat_event.dart (46 lines)
+  ⎿  Read lib/features/chat/data/datasources/chat_remote_datasource.dart (116 lines)
+  ⎿  Read lib/features/chat/data/repositories/chat_repository_impl.dart (87 lines)
+
+● Building the chat detail screen with message bubbles and streaming display.                          
+                                     
+  Read 8 files, listed 1 directory (ctrl+o to expand)                                                  
+                                                                                                 
+● Now I'll create the chat detail screen with message bubbles, streaming indicator, and wire up the input bar. Let me
+  also check the l10n for Bangla ARB to keep it in sync.                                               
+                                                                                                       
+  Read 3 files (ctrl+o to expand)              
+                                                                                                                        
+● Now I'll create the chat detail screen with message bubbles and streaming support, plus a reusable message bubble
+  widget. I'll also update the input bar to dispatch BLoC events.                                                       
+                                               
+● Write(lib/features/chat/presentation/widgets/message_bubble.dart)                                                     
+  ⎿  Wrote 64 lines to lib/features/chat/presentation/widgets/message_bubble.dart                                       
+       1 import 'package:flutter/material.dart';                                                                        
+       2 import 'package:golden_chicken/core/constants/app_colors.dart';                                                
+       3 import 'package:golden_chicken/core/constants/app_radius.dart';                                                
+       4 import 'package:golden_chicken/core/constants/app_spacing.dart';                                               
+       5 import 'package:golden_chicken/features/chat/domain/entities/chat_message.dart';                               
+       6                                                                                                                
+       7 class MessageBubble extends StatelessWidget {                                                                  
+       8   const MessageBubble({required this.message, super.key});
+       9                                                                                                                
+      10   final ChatMessage message;    
+     … +54 lines (ctrl+o to expand)                                                                                     
+                                                                                                                      
+● Write(lib/features/chat/presentation/widgets/streaming_bubble.dart)                                                 
+  ⎿  Wrote 119 lines to lib/features/chat/presentation/widgets/streaming_bubble.dart
+      1 import 'package:flutter/material.dart';                                                                         
+      2 import 'package:golden_chicken/core/constants/app_colors.dart';
+      3 import 'package:golden_chicken/core/constants/app_radius.dart';
+      4 import 'package:golden_chicken/core/constants/app_spacing.dart';
+      5                                     
+      6 class StreamingBubble extends StatelessWidget {  
+      7   const StreamingBubble({required this.content, super.key});                                                    
+      8                                                    
+      9   final String content;                                                                                         
+     … +109 lines (ctrl+o to expand)                                                                                  
+                                                                                                                        
+● Now creating the chat detail screen and updating the input bar to be reusable with BLoC integration.                
+                                                                                                                      
+● Write(lib/features/chat/presentation/chat_detail_screen.dart)               
+  ⎿  Wrote 257 lines to lib/features/chat/presentation/chat_detail_screen.dart
+       1 import 'package:flutter/material.dart';                                                                        
+       2 import 'package:flutter_bloc/flutter_bloc.dart';
+       3 import 'package:golden_chicken/core/constants/app_colors.dart';
+       4 import 'package:golden_chicken/core/constants/app_spacing.dart';
+       5 import 'package:golden_chicken/core/di/injection_container.dart';                                              
+       6 import 'package:golden_chicken/core/l10n/l10n.dart';
+       7 import 'package:golden_chicken/core/widgets/app_error_widget.dart';                                            
+       8 import 'package:golden_chicken/core/widgets/app_loading.dart';                                               
+       9 import 'package:golden_chicken/features/chat/presentation/bloc/chat_bloc.dart';                                
+      10 import 'package:golden_chicken/features/chat/presentation/bloc/chat_event.dart';                             
+     … +247 lines (ctrl+o to expand)                                                                                    
+                                                                                                                      
+● Now I need to register the ChatBloc in DI and add the chat detail route. Let me also add a chatDetail route name.   
+                                     
+● Update(lib/core/router/route_names.dart)                   
+  ⎿  Added 1 line                               
+       5    static const String signup = 'signup';                                                                      
+       6    static const String home = 'home';  
+       7    static const String chat = 'chat'; 
+       8 +  static const String chatDetail = 'chat-detail';                                                      
+       9    static const String healthCenter = 'health-center';                                                         
+      10    static const String marketInsights = 'market-insights';
+      11    static const String profile = 'profile';                                                                    
+                                                                                                                      
+● Now add the chat detail route to the router. It should be a top-level route (not inside the shell) since it's a       
+  full-screen conversation view with its own back button.                                                             
+                                                                                                                        
+● Update(lib/core/router/app_router.dart)                                                                             
+  ⎿  Added 1 line                                                                                                     
+       5  import 'package:golden_chicken/features/auth/presentation/bloc/auth_state.dart';                              
+       6  import 'package:golden_chicken/features/auth/presentation/login_screen.dart';
+       7  import 'package:golden_chicken/features/auth/presentation/signup_screen.dart';
+       8 +import 'package:golden_chicken/features/chat/presentation/chat_detail_screen.dart';                           
+       9  import 'package:golden_chicken/features/chat/presentation/chat_tab_screen.dart';
+      10  import 'package:golden_chicken/features/health_center/presentation/health_tab_screen.dart';                   
+      11  import 'package:golden_chicken/features/market/presentation/market_tab_screen.dart';                          
+                                                                                                                      
+● Update(lib/core/router/app_router.dart)                                                                               
+  ⎿  Added 12 lines                                                                                                   
+      74          name: RouteNames.signup,                                                                              
+      75          builder: (context, state) => const SignupScreen(),                                                  
+      76        ),                                                                                                      
+      77 +      GoRoute(                                                                                         
+      78 +        path: '/chat/detail',                                                                          
+      79 +        name: RouteNames.chatDetail,                                                                   
+      80 +        builder: (context, state) {                                                                           
+      81 +          final sessionId = state.uri.queryParameters['sessionId'];                                    
+      82 +          final prompt = state.uri.queryParameters['prompt'];                                                 
+      83 +          return ChatDetailScreen(                                                                          
+      84 +            sessionId: sessionId,                                                                             
+      85 +            initialPrompt: prompt,                                                                          
+      86 +          );                                                                                                  
+      87 +        },                                                                                                  
+      88 +      ),                                                                                               
+      89        ShellRoute(
+      90          navigatorKey: _shellNavigatorKey,
+      91          builder: (context, state, child) => MainShell(child: child),
+
+● Now register ChatBloc and its dependencies in DI. I'll add a _initChat() method to the injection container.
+                                     
+● Update(lib/core/di/injection_container.dart)               
+  ⎿  Added 7 lines                              
+      13  import 'package:golden_chicken/features/auth/domain/usecases/refresh_token_usecase.dart';                     
+      14  import 'package:golden_chicken/features/auth/domain/usecases/register_usecase.dart';
+      15  import 'package:golden_chicken/features/auth/presentation/bloc/auth_bloc.dart';                               
+      16 +import 'package:golden_chicken/features/chat/data/datasources/chat_remote_datasource.dart';            
+      17 +import 'package:golden_chicken/features/chat/data/repositories/chat_repository_impl.dart';                    
+      18 +import 'package:golden_chicken/features/chat/domain/repositories/chat_repository.dart';                
+      19 +import 'package:golden_chicken/features/chat/domain/usecases/create_new_chat.dart';                           
+      20 +import 'package:golden_chicken/features/chat/domain/usecases/get_chat_history.dart';                   
+      21 +import 'package:golden_chicken/features/chat/domain/usecases/send_message.dart';                              
+      22 +import 'package:golden_chicken/features/chat/presentation/bloc/chat_bloc.dart';                             
+      23  import 'package:shared_preferences/shared_preferences.dart';                                                  
+      24                                                                                                              
+      25  final sl = GetIt.instance;                                                                                    
+                                                                                                                      
+● Update(lib/core/di/injection_container.dart)                                                                        
+  ⎿  Added 3 lines
+      39                                                                                                                
+      40    // Auth                     
+      41    _initAuth();                       
+      42 +                                                                                                       
+      43 +  // Chat                                                                                              
+      44 +  _initChat();                                                                                         
+      45  }                    
+      46                                                   
+      47  void _initAuth() {                                                                                            
+   
+● Update(lib/core/di/injection_container.dart)                                                                          
+  ⎿  Added 20 lines                                                                                                   
+      75        ),                                                                                                      
+      76      );                                
+      77  }                                    
+      78 +                                                                                                       
+      79 +void _initChat() {                                                                                     
+      80 +  sl                                                                                                   
+      81 +    ..registerLazySingleton<ChatRemoteDatasource>(                                                            
+      82 +      () => ChatRemoteDatasourceImpl(sl<Dio>()),                                                       
+      83 +    )                                                                                                         
+      84 +    ..registerLazySingleton<ChatRepository>(                                                                
+      85 +      () => ChatRepositoryImpl(remoteDatasource: sl()),                                                       
+      86 +    )                                                                                                  
+      87 +    ..registerLazySingleton(() => CreateNewChat(sl()))                                                      
+      88 +    ..registerLazySingleton(() => GetChatHistory(sl()))                                                     
+      89 +    ..registerLazySingleton(() => SendMessage(sl()))                                                   
+      90 +    ..registerFactory(                                                                                 
+      91 +      () => ChatBloc(                                                                                  
+      92 +        createNewChat: sl(),                                                                           
+      93 +        getChatHistory: sl(),                                                                          
+      94 +        sendMessage: sl(),                                                                             
+      95 +      ),                                                                                               
+      96 +    );                                                                                                 
+      97 +}                                                                                                      
+
+● Now let me wire up the ChatTabScreen's input bar and quick action chips to navigate to the chat detail screen.
+                                     
+  Read 1 file (ctrl+o to expand)                             
+                                                                   
+● I need to update the QuickActionChips to accept an onChipTapped callback, and update ChatTabScreen to navigate to the
+  chat detail screen.                                        
+                                               
+● Update(lib/features/chat/presentation/widgets/quick_action_chips.dart)
+  ⎿  Added 3 lines, removed 1 line                                                                                      
+       4  import 'package:golden_chicken/core/constants/app_spacing.dart';                                              
+       5                                                                                                                
+       6  class QuickActionChips extends StatelessWidget {                                                              
+       7 -  const QuickActionChips({super.key});                                                                        
+       7 +  const QuickActionChips({this.onChipTapped, super.key});                                                     
+       8                                                                                                                
+       9 +  final ValueChanged<String>? onChipTapped;                                                                   
+      10 +                                                                                                            
+      11    static const _actions = [                                                                                   
+      12      _QuickAction(                                                                                             
+      13        label: 'আজকের খাদ্য পরিকল্পনা?',                                                                                                                                                                                                
+   ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+● Update(lib/features/chat/presentation/widgets/quick_action_chips.dart)                                                
+  ⎿  Addedn1eline, removedt1tlinede tasks                                                                             
+      45                shape: RoundedRectangleBorder(                                                                  
+      46                  borderRadius: BorderRadius.circular(AppRadius.chip),
+      47                ),                     
+      48 -              onPressed: () {},                                                                        
+      48 +              onPressed: () => onChipTapped?.call(action.label),                                       
+      49              ),                                   
+      50            )          
+      51            .toList(),                             
+                                                                                                                        
+● Now update ChatTabScreen to navigate to chat detail when the user taps send or a quick action chip.
+                                                                                                                        
+● Update(lib/features/chat/presentation/chat_tab_screen.dart)                                                         
+  ⎿  Added 1 line                                                                                                       
+      1  import 'package:flutter/material.dart';                                                                        
+      2  import 'package:flutter_bloc/flutter_bloc.dart';
+      3 +import 'package:go_router/go_router.dart';                                                              
+      4  import 'package:golden_chicken/core/constants/app_colors.dart';
+      5  import 'package:golden_chicken/core/constants/app_radius.dart';                                                
+      6  import 'package:golden_chicken/core/constants/app_spacing.dart';
+                                                                                                                        
+● Now update the body to wire up navigation — the quick action chips and the input bar should open the chat detail    
+  screen with the prompt.                                                                                               
+                                                                                                                      
+● Update(lib/features/chat/presentation/chat_tab_screen.dart)                                                           
+  ⎿  Added 5 lines, removed 1 line                                                                                    
+       93                  const SizedBox(height: AppSpacing.lg),                                                       
+       94                  _AiMessageBubble(),  
+       95                  const SizedBox(height: AppSpacing.lg),                                                       
+       96 -                const QuickActionChips(),                                                                    
+       96 +                QuickActionChips(                                                                     
+       97 +                  onChipTapped: (prompt) => context.push(                                                    
+       98 +                    '/chat/detail?prompt=${Uri.encodeComponent(prompt)}',                                    
+       99 +                  ),                                                                                       
+      100 +                ),                                                                                           
+      101                  const SizedBox(height: AppSpacing.xxl),                                                    
+      102                  _LiveAiButton(l10n: l10n),                                                                   
+      103                ],                                                                                           
+                                                                                                                        
+● Update(lib/features/chat/presentation/chat_tab_screen.dart)
+  ⎿  Added 5 lines, removed 1 line                                                                                    
+      103                ],                                                                                             
+      104              ),               
+      105            ),                        
+      106 -          const ChatInputBar(),                                                                       
+      106 +          ChatInputBar(                                                                               
+      107 +            onSubmit: (text) => context.push(                                                         
+      108 +              '/chat/detail?prompt=${Uri.encodeComponent(text)}',                                     
+      109 +            ),                                                                                        
+      110 +          ),                                                                                                 
+      111          ],
+      112        ),                                                                                                     
+      113      );                        
+                                                                                                                      
+● Now update ChatInputBar to accept an onSubmit callback.                                                             
+                                     
+● Write(lib/features/chat/presentation/widgets/chat_input_bar.dart)
+  ⎿  Added 13 lines, removed 3 lines            
+       5  import 'package:golden_chicken/core/l10n/l10n.dart';                                                          
+       6                                        
+       7  class ChatInputBar extends StatefulWidget {
+       8 -  const ChatInputBar({super.key});                                                                     
+       8 +  const ChatInputBar({this.onSubmit, super.key});                                                             
+       9                                               
+      10 +  final ValueChanged<String>? onSubmit;                                                                       
+      11 +                                                                                                       
+      12    @override                                                                                                   
+      13    State<ChatInputBar> createState() => _ChatInputBarState();                                                
+      14  }                                                                                                             
+     ...                                                                                                                
+      22      super.dispose();                                                                                        
+      23    }                                                                                                         
+      24  
+      25 +  void _handleSubmit() {                                                                               
+      26 +    final text = _controller.text.trim();                                                              
+      27 +    if (text.isEmpty) return;                                                                          
+      28 +    widget.onSubmit?.call(text);                                                                       
+      29 +    _controller.clear();                                                                               
+      30 +  }                                                                                                    
+      31 +                                                                                                       
+      32    @override
+      33    Widget build(BuildContext context) {
+      34      final l10n = context.l10n;
+     ...
+      60              Expanded(
+      61                child: TextField(
+      62                  controller: _controller,
+      63 +                textInputAction: TextInputAction.send,                                                 
+      64 +                onSubmitted: (_) => _handleSubmit(),                                                   
+      65                  decoration: InputDecoration(
+      66                    hintText: '${l10n.askGoldenAi}...',
+      67                    filled: true,
+     ...
+      86                      ),
+      87                    ),
+      88                  ),
+      78 -                onSubmitted: (_) {},                                                                   
+      89                ),
+      90              ),
+      91              const SizedBox(width: AppSpacing.sm),
+     ...
+      93                color: AppColors.primary,
+      94                borderRadius: BorderRadius.circular(AppRadius.pill),
+      95                child: InkWell(
+      86 -                onTap: () {},                                                                          
+      96 +                onTap: _handleSubmit,                                                                  
+      97                  borderRadius: BorderRadius.circular(AppRadius.pill),
+      98                  child: const SizedBox(
+      99                    width: 44,
+  ⎿  Found 3 new diagnostic issues in 1 file (ctrl+o to expand)
+                                                             
+● The diagnostics are stale — the ChatInputBar now has onSubmit. Let me fix the lambda type in ChatTabScreen.
+                                               
+● Update(lib/features/chat/presentation/chat_tab_screen.dart)
+  ⎿  Added 1 line, removed 1 line               
+      104              ),                                                                                               
+      105            ),                         
+      106            ChatInputBar(             
+      107 -            onSubmit: (text) => context.push(                                                                
+      107 +            onSubmit: (String text) => context.push(                                                         
+      108                '/chat/detail?prompt=${Uri.encodeComponent(text)}',                                            
+      109              ),                                                                                               
+      110            ),                                                                                               
+                                                                                                                        
+● Now let me check the streaming_bubble.dart — I used AnimatedBuilder which might not exist. Let me verify.           
+                                                                                                                        
+● Bash(cd "/media/fahim/Softwares/Golden Chicken/frontend" && grep -r "AnimatedBuilder" lib/ 2>/dev/null)             
+  ⎿  lib/features/chat/presentation/widgets/streaming_bubble.dart:    return AnimatedBuilder(                           
+                                                                                                                        
+● AnimatedBuilder was added in Flutter 3.10+. To be safe, let me use the traditional AnimatedWidget pattern instead.
+                                            
+● Update(lib/features/chat/presentation/widgets/streaming_bubble.dart)
+  ⎿  Added 1 line, removed 1 line                                                                                       
+      90    Widget build(BuildContext context) {                                                                        
+      91      return AnimatedBuilder(                                                                                   
+      92        animation: _controller,                                                                               
+      93 -      builder: (context, _) {                                                                                 
+      93 +      builder: (context, child) {                                                                             
+      94          return Row(                                                                                         
+      95            mainAxisSize: MainAxisSize.min,                                                                     
+      96            children: List.generate(3, (i) {                                                                  
+                                                                                                                        
+● Let me just run the analysis to see if AnimatedBuilder exists in this Flutter version.                              
+                                                                                                                        
+● Bash(cd "/media/fahim/Softwares/Golden Chicken/frontend" && flutter analyze                                         
+      lib/features/chat/presentation/widgets/streaming_bubble.dart 2>&1 | head -30)                                     
+  ⎿  Analyzing streaming_bubble.dart...                                                                               
+     No issues found! (ran in 0.7s)             
+                                                                                                                        
+● Good, AnimatedBuilder works. Now let me run full analysis on all the chat files.
+                                                                                                                        
+● Bash(cd "/media/fahim/Softwares/Golden Chicken/frontend" && flutter analyze lib/features/chat/ lib/core/di/
+      lib/core/router/ 2>&1 | tail -20)                                                                                 
+  ⎿  Analyzing 3 items...                      
+     No issues found! (ran in 1.3s)                                                                                     
+                                                                                                                        
+● All clean. Now let me move to Task #20 — building the health center domain and data layers. Let me check the          
+  implementation plan for what's needed.                                                                                
+                                                                                                                        
+● Bash(cd "/media/fahim/Softwares/Golden Chicken/frontend" && grep -A 50 "Health Center" memory-bank/activeContext.md   
+      2>/dev/null | head -60)                                                                                         
+  ⎿  **Next up: Sprint 3** — Chat (SSE streaming + message bubbles + image upload), Health Center (disease grid, se     
+     verity badges, tab filters, Ask AI), and Production (Flock Overview, egg/chicken records).                       
+     … +20 lines (ctrl+o to expand)                                                                                     
+                                                                                                                        
+● Reading 1 file… (ctrl+o to expand)                                                                                    
+  ⎿  lib/core/constants/api_endpoints.dart                                                                              
+                                                                                                                        
+● Bash(cd "/media/fahim/Softwares/Golden Chicken/frontend" && grep -A 80 "Sprint 3"                                   
+      GoldenChicken_Flutter_Implementation_Plan.md 2>/dev/null | head -100)                                             
+  ⎿  ### Sprint 3 (Week 5–6): Chat, Health Center & Production                                                        
+                                                                                                                      
+     - Chat screen: message bubbles, input bar, streaming, image upload                                                 
+     … +32 lines (ctrl+o to expand)                                                                               
+  ⎿  You've hit your org's monthly usage limit                                                                          
+     /upgrade to increase your usage limit.                                    
+                                                                                                                        
+✻ Cogitated for 7m 9s                            
+                                                                                                                        
+  8 tasks (1 done, 1 in progress, 6 open)                                                                             
+  ◼ Build ChatBloc and chat screen                                                                                      
+  ◻ Build health center domain + data layers                                                                          
+  ◻ Build HealthBloc and health center screen                                                                           
+  ◻ Build production domain + data layers                                                                               
+  ◻ Build flock overview and record screens                                                                           
+   … +2 pending, 1 completed                                                                                            
+                                         
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯                                                                                                                     
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ctrl+t to hide tasks                                                                      ⧉ In streaming_bubble.dart
+                                                                                                                        
+

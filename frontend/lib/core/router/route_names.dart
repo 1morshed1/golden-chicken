@@ -5,6 +5,7 @@ abstract final class RouteNames {
   static const String signup = 'signup';
   static const String home = 'home';
   static const String chat = 'chat';
+  static const String chatDetail = 'chat-detail';
   static const String healthCenter = 'health-center';
   static const String marketInsights = 'market-insights';
   static const String profile = 'profile';

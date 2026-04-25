@@ -4,6 +4,7 @@ import 'package:golden_chicken/app.dart';
 import 'package:golden_chicken/core/di/injection_container.dart';
 import 'package:golden_chicken/core/l10n/locale_cubit.dart';
 import 'package:golden_chicken/core/theme/theme_cubit.dart';
+import 'package:golden_chicken/features/auth/presentation/bloc/auth_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
@@ -19,6 +20,7 @@ void main() async {
         BlocProvider(
           create: (_) => ThemeCubit(prefs: sl<SharedPreferences>()),
         ),
+        BlocProvider(create: (_) => sl<AuthBloc>()),
       ],
       child: const GoldenChickenApp(),
     ),

@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -5,20 +6,29 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.ai.gemini_client import GeminiClient, gemini_client
 from app.ai.intent import classify_intent
 from app.ai.prompts.system_prompt import get_system_prompt
+from app.ai.rag.retriever import Retriever
 from app.config import settings
 from app.core.exceptions import AuthorizationError, NotFoundError
 from app.models.chat import ChatMessage, ChatSession, MessageRole
 from app.models.user import User
 from app.repositories.chat_repository import ChatMessageRepository, ChatSessionRepository
 
+logger = logging.getLogger(__name__)
 
 session_repo = ChatSessionRepository()
 message_repo = ChatMessageRepository()
 
 
 class ChatService:
-    def __init__(self, gemini: GeminiClient):
+    def __init__(self, gemini: GeminiClient, retriever: Retriever | None = None):
         self.gemini = gemini
+        self._retriever = retriever
+
+    @property
+    def retriever(self) -> Retriever:
+        if self._retriever is None:
+            self._retriever = Retriever()
+        return self._retriever
 
     async def create_session(
         self, db: AsyncSession, user: User, title: str | None = None
@@ -85,6 +95,15 @@ class ChatService:
         )
 
         intent = await classify_intent(content, self.gemini)
+
+        rag_context = None
+        try:
+            rag_context = await self.retriever.retrieve_and_build(
+                db, content, category=intent
+            )
+        except Exception:
+            logger.warning("RAG retrieval failed, proceeding without context", exc_info=True)
+
         history = await message_repo.get_recent_messages(db, session_id, limit=10)
         chat_history = self._format_history(history)
         system_prompt = get_system_prompt(language)
@@ -93,6 +112,7 @@ class ChatService:
             system_prompt=system_prompt,
             user_message=content,
             chat_history=chat_history,
+            context=rag_context,
         )
 
         ai_msg = await message_repo.create_message(
@@ -103,6 +123,7 @@ class ChatService:
             message_metadata={
                 "intent": intent,
                 "model": settings.GEMINI_TEXT_MODEL,
+                "rag_used": rag_context is not None,
             },
         )
 
@@ -133,6 +154,15 @@ class ChatService:
         await db.commit()
 
         intent = await classify_intent(content, self.gemini)
+
+        rag_context = None
+        try:
+            rag_context = await self.retriever.retrieve_and_build(
+                db, content, category=intent
+            )
+        except Exception:
+            logger.warning("RAG retrieval failed during stream, proceeding without context", exc_info=True)
+
         history = await message_repo.get_recent_messages(db, session_id, limit=10)
         chat_history = self._format_history(history)
         system_prompt = get_system_prompt(language)
@@ -142,6 +172,7 @@ class ChatService:
             system_prompt=system_prompt,
             user_message=content,
             chat_history=chat_history,
+            context=rag_context,
         ):
             full_response.append(chunk)
             yield chunk
@@ -155,6 +186,7 @@ class ChatService:
             message_metadata={
                 "intent": intent,
                 "model": settings.GEMINI_TEXT_MODEL,
+                "rag_used": rag_context is not None,
             },
         )
 
@@ -164,6 +196,73 @@ class ChatService:
             await session_repo.update_title(db, session, title)
 
         await db.commit()
+
+    async def diagnose_image(
+        self,
+        db: AsyncSession,
+        user: User,
+        image_bytes: bytes,
+        mime_type: str,
+        image_url: str,
+        additional_notes: str | None = None,
+        language: str = "en",
+    ) -> dict:
+        from app.ai.prompts.disease_diagnosis import get_diagnosis_prompt
+
+        session = await session_repo.create(
+            db, user_id=user.id, title="Disease Diagnosis"
+        )
+
+        user_content = additional_notes or "Please analyze this image for disease signs."
+        user_msg = await message_repo.create_message(
+            db,
+            session_id=session.id,
+            role=MessageRole.USER,
+            content=user_content,
+            message_metadata={"image_url": image_url},
+        )
+
+        rag_context = None
+        try:
+            rag_context = await self.retriever.retrieve_and_build(
+                db, user_content, category="disease_diagnosis"
+            )
+        except Exception:
+            logger.warning("RAG retrieval failed during diagnosis", exc_info=True)
+
+        diagnosis_prompt = get_diagnosis_prompt(language)
+        diagnosis = await self.gemini.analyze_image(
+            image_bytes=image_bytes,
+            mime_type=mime_type,
+            prompt=diagnosis_prompt,
+            context=rag_context,
+        )
+
+        ai_msg = await message_repo.create_message(
+            db,
+            session_id=session.id,
+            role=MessageRole.ASSISTANT,
+            content=diagnosis,
+            message_metadata={
+                "intent": "disease_diagnosis",
+                "model": settings.GEMINI_TEXT_MODEL,
+                "rag_used": rag_context is not None,
+                "image_diagnosis": True,
+            },
+        )
+
+        title = await self.gemini.generate_title(user_content)
+        await session_repo.update_title(db, session, title)
+
+        return {
+            "session_id": session.id,
+            "user_message_id": user_msg.id,
+            "ai_message_id": ai_msg.id,
+            "diagnosis": diagnosis,
+            "image_url": image_url,
+            "intent": "disease_diagnosis",
+            "rag_used": rag_context is not None,
+        }
 
     async def update_feedback(
         self, db: AsyncSession, message_id: str, user: User, feedback: int

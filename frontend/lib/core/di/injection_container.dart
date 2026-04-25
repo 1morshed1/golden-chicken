@@ -26,6 +26,16 @@ import 'package:golden_chicken/features/health_center/domain/repositories/health
 import 'package:golden_chicken/features/health_center/domain/usecases/ask_health_question.dart';
 import 'package:golden_chicken/features/health_center/domain/usecases/get_health_tabs.dart';
 import 'package:golden_chicken/features/health_center/presentation/bloc/health_bloc.dart';
+import 'package:golden_chicken/features/insights/data/datasources/insights_remote_datasource.dart';
+import 'package:golden_chicken/features/insights/data/repositories/insights_repository_impl.dart';
+import 'package:golden_chicken/features/insights/domain/repositories/insights_repository.dart';
+import 'package:golden_chicken/features/insights/domain/usecases/acknowledge_insight.dart';
+import 'package:golden_chicken/features/insights/domain/usecases/get_insights.dart';
+import 'package:golden_chicken/features/insights/presentation/bloc/insights_bloc.dart';
+import 'package:golden_chicken/features/live_ai/data/datasources/live_ai_websocket_datasource.dart';
+import 'package:golden_chicken/features/live_ai/data/repositories/live_ai_repository_impl.dart';
+import 'package:golden_chicken/features/live_ai/domain/repositories/live_ai_repository.dart';
+import 'package:golden_chicken/features/live_ai/presentation/bloc/live_ai_bloc.dart';
 import 'package:golden_chicken/features/market/data/datasources/market_remote_datasource.dart';
 import 'package:golden_chicken/features/market/data/repositories/market_repository_impl.dart';
 import 'package:golden_chicken/features/market/domain/repositories/market_repository.dart';
@@ -39,6 +49,12 @@ import 'package:golden_chicken/features/production/domain/usecases/add_chicken_r
 import 'package:golden_chicken/features/production/domain/usecases/add_egg_record.dart';
 import 'package:golden_chicken/features/production/domain/usecases/get_flock_overview.dart';
 import 'package:golden_chicken/features/production/presentation/bloc/production_bloc.dart';
+import 'package:golden_chicken/features/profile/data/datasources/profile_remote_datasource.dart';
+import 'package:golden_chicken/features/profile/data/repositories/profile_repository_impl.dart';
+import 'package:golden_chicken/features/profile/domain/repositories/profile_repository.dart';
+import 'package:golden_chicken/features/profile/domain/usecases/get_profile.dart';
+import 'package:golden_chicken/features/profile/domain/usecases/update_profile.dart';
+import 'package:golden_chicken/features/profile/presentation/bloc/profile_bloc.dart';
 import 'package:golden_chicken/features/tasks/data/datasources/task_remote_datasource.dart';
 import 'package:golden_chicken/features/tasks/data/repositories/task_repository_impl.dart';
 import 'package:golden_chicken/features/tasks/domain/repositories/task_repository.dart';
@@ -80,6 +96,15 @@ Future<void> initDependencies() async {
 
   // Tasks
   _initTasks();
+
+  // Profile
+  _initProfile();
+
+  // Insights
+  _initInsights();
+
+  // Live AI
+  _initLiveAi();
 }
 
 void _initAuth() {
@@ -206,6 +231,56 @@ void _initTasks() {
         getTasks: sl(),
         createTask: sl(),
         completeTask: sl(),
+      ),
+    );
+}
+
+void _initProfile() {
+  sl
+    ..registerLazySingleton<ProfileRemoteDatasource>(
+      () => ProfileRemoteDatasourceImpl(sl<Dio>()),
+    )
+    ..registerLazySingleton<ProfileRepository>(
+      () => ProfileRepositoryImpl(remoteDatasource: sl()),
+    )
+    ..registerLazySingleton(() => GetProfile(sl()))
+    ..registerLazySingleton(() => UpdateProfile(sl()))
+    ..registerFactory(
+      () => ProfileBloc(
+        getProfile: sl(),
+        updateProfile: sl(),
+      ),
+    );
+}
+
+void _initInsights() {
+  sl
+    ..registerLazySingleton<InsightsRemoteDatasource>(
+      () => InsightsRemoteDatasourceImpl(sl<Dio>()),
+    )
+    ..registerLazySingleton<InsightsRepository>(
+      () => InsightsRepositoryImpl(remoteDatasource: sl()),
+    )
+    ..registerLazySingleton(() => GetInsights(sl()))
+    ..registerLazySingleton(() => AcknowledgeInsight(sl()))
+    ..registerFactory(
+      () => InsightsBloc(
+        getInsights: sl(),
+        acknowledgeInsight: sl(),
+      ),
+    );
+}
+
+void _initLiveAi() {
+  sl
+    ..registerLazySingleton(LiveAiWebSocketDatasource.new)
+    ..registerLazySingleton<LiveAiRepository>(
+      () => LiveAiRepositoryImpl(datasource: sl()),
+    )
+    ..registerFactory(
+      () => LiveAiBloc(
+        repository: sl(),
+        secureStorage: sl(),
       ),
     );
 }

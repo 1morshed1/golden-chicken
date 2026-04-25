@@ -8,11 +8,14 @@ import 'package:golden_chicken/features/auth/presentation/signup_screen.dart';
 import 'package:golden_chicken/features/chat/presentation/chat_detail_screen.dart';
 import 'package:golden_chicken/features/chat/presentation/chat_tab_screen.dart';
 import 'package:golden_chicken/features/health_center/presentation/health_tab_screen.dart';
+import 'package:golden_chicken/features/insights/presentation/insights_screen.dart';
+import 'package:golden_chicken/features/live_ai/presentation/live_ai_screen.dart';
 import 'package:golden_chicken/features/market/presentation/market_tab_screen.dart';
 import 'package:golden_chicken/features/onboarding/presentation/language_selection_screen.dart';
 import 'package:golden_chicken/features/production/presentation/chicken_records_screen.dart';
 import 'package:golden_chicken/features/production/presentation/egg_records_screen.dart';
 import 'package:golden_chicken/features/production/presentation/flock_overview_screen.dart';
+import 'package:golden_chicken/features/profile/presentation/edit_profile_screen.dart';
 import 'package:golden_chicken/features/profile/presentation/profile_tab_screen.dart';
 import 'package:golden_chicken/features/splash/presentation/splash_screen.dart';
 import 'package:golden_chicken/features/tasks/presentation/create_task_screen.dart';
@@ -103,6 +106,21 @@ GoRouter createRouter({
         path: '/tasks/create',
         name: RouteNames.createTask,
         builder: (context, state) => const CreateTaskScreen(),
+      ),
+      GoRoute(
+        path: '/edit-profile',
+        name: RouteNames.editProfile,
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: '/insights',
+        name: RouteNames.insights,
+        builder: (context, state) => const InsightsScreen(),
+      ),
+      GoRoute(
+        path: '/live-ai',
+        name: RouteNames.liveAi,
+        builder: (context, state) => const LiveAiScreen(),
       ),
       GoRoute(
         path: '/chat/detail',

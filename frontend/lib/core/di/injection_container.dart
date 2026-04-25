@@ -26,6 +26,12 @@ import 'package:golden_chicken/features/health_center/domain/repositories/health
 import 'package:golden_chicken/features/health_center/domain/usecases/ask_health_question.dart';
 import 'package:golden_chicken/features/health_center/domain/usecases/get_health_tabs.dart';
 import 'package:golden_chicken/features/health_center/presentation/bloc/health_bloc.dart';
+import 'package:golden_chicken/features/market/data/datasources/market_remote_datasource.dart';
+import 'package:golden_chicken/features/market/data/repositories/market_repository_impl.dart';
+import 'package:golden_chicken/features/market/domain/repositories/market_repository.dart';
+import 'package:golden_chicken/features/market/domain/usecases/get_market_prices.dart';
+import 'package:golden_chicken/features/market/domain/usecases/get_price_trend.dart';
+import 'package:golden_chicken/features/market/presentation/bloc/market_bloc.dart';
 import 'package:golden_chicken/features/production/data/datasources/production_remote_datasource.dart';
 import 'package:golden_chicken/features/production/data/repositories/production_repository_impl.dart';
 import 'package:golden_chicken/features/production/domain/repositories/production_repository.dart';
@@ -33,6 +39,13 @@ import 'package:golden_chicken/features/production/domain/usecases/add_chicken_r
 import 'package:golden_chicken/features/production/domain/usecases/add_egg_record.dart';
 import 'package:golden_chicken/features/production/domain/usecases/get_flock_overview.dart';
 import 'package:golden_chicken/features/production/presentation/bloc/production_bloc.dart';
+import 'package:golden_chicken/features/tasks/data/datasources/task_remote_datasource.dart';
+import 'package:golden_chicken/features/tasks/data/repositories/task_repository_impl.dart';
+import 'package:golden_chicken/features/tasks/domain/repositories/task_repository.dart';
+import 'package:golden_chicken/features/tasks/domain/usecases/complete_task.dart';
+import 'package:golden_chicken/features/tasks/domain/usecases/create_task.dart';
+import 'package:golden_chicken/features/tasks/domain/usecases/get_tasks.dart';
+import 'package:golden_chicken/features/tasks/presentation/bloc/task_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 final sl = GetIt.instance;
@@ -61,6 +74,12 @@ Future<void> initDependencies() async {
 
   // Production
   _initProduction();
+
+  // Market
+  _initMarket();
+
+  // Tasks
+  _initTasks();
 }
 
 void _initAuth() {
@@ -149,6 +168,44 @@ void _initProduction() {
         getFlockOverview: sl(),
         addEggRecord: sl(),
         addChickenRecord: sl(),
+      ),
+    );
+}
+
+void _initMarket() {
+  sl
+    ..registerLazySingleton<MarketRemoteDatasource>(
+      () => MarketRemoteDatasourceImpl(sl<Dio>()),
+    )
+    ..registerLazySingleton<MarketRepository>(
+      () => MarketRepositoryImpl(remoteDatasource: sl()),
+    )
+    ..registerLazySingleton(() => GetMarketPrices(sl()))
+    ..registerLazySingleton(() => GetPriceTrend(sl()))
+    ..registerFactory(
+      () => MarketBloc(
+        getMarketPrices: sl(),
+        getPriceTrend: sl(),
+      ),
+    );
+}
+
+void _initTasks() {
+  sl
+    ..registerLazySingleton<TaskRemoteDatasource>(
+      () => TaskRemoteDatasourceImpl(sl<Dio>()),
+    )
+    ..registerLazySingleton<TaskRepository>(
+      () => TaskRepositoryImpl(remoteDatasource: sl()),
+    )
+    ..registerLazySingleton(() => GetTasks(sl()))
+    ..registerLazySingleton(() => CreateTask(sl()))
+    ..registerLazySingleton(() => CompleteTask(sl()))
+    ..registerFactory(
+      () => TaskBloc(
+        getTasks: sl(),
+        createTask: sl(),
+        completeTask: sl(),
       ),
     );
 }

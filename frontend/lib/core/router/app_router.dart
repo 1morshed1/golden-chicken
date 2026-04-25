@@ -15,6 +15,8 @@ import 'package:golden_chicken/features/production/presentation/egg_records_scre
 import 'package:golden_chicken/features/production/presentation/flock_overview_screen.dart';
 import 'package:golden_chicken/features/profile/presentation/profile_tab_screen.dart';
 import 'package:golden_chicken/features/splash/presentation/splash_screen.dart';
+import 'package:golden_chicken/features/tasks/presentation/create_task_screen.dart';
+import 'package:golden_chicken/features/tasks/presentation/task_list_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _shellNavigatorKey = GlobalKey<NavigatorState>();
@@ -91,6 +93,16 @@ GoRouter createRouter({
         path: '/chicken-records',
         name: RouteNames.chickenRecords,
         builder: (context, state) => const ChickenRecordsScreen(),
+      ),
+      GoRoute(
+        path: '/tasks',
+        name: RouteNames.taskList,
+        builder: (context, state) => const TaskListScreen(),
+      ),
+      GoRoute(
+        path: '/tasks/create',
+        name: RouteNames.createTask,
+        builder: (context, state) => const CreateTaskScreen(),
       ),
       GoRoute(
         path: '/chat/detail',

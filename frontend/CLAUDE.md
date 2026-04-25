@@ -17,6 +17,7 @@ If you discover new patterns/constraints while working, **update the Memory Bank
 - AI-first farm assistant for poultry farmers (Bangladesh-first)
 - Core features: AI chat (streaming) + image diagnosis, Health Center, production tracking + trends, tasks, market insights, profile/preferences, and **Live AI** (voice + camera streaming via backend).
 - UX priorities: **Bangla-first**, resilient under poor connectivity, explicit loading/error/streaming states.
+- Current design reference: `Figma.pdf` in the frontend repo.
 
 ## Architecture & conventions
 ### High-level pattern
@@ -58,6 +59,10 @@ If you discover new patterns/constraints while working, **update the Memory Bank
   - Provide loading/empty/error states.
   - Avoid directly calling APIs from UI; route through use cases/repositories.
 
+## Available agent tooling
+- Claude/Cursor agents may use **Context7 MCP** to fetch current documentation for libraries, frameworks, SDKs, APIs, CLIs, and cloud services before making implementation decisions.
+- Claude/Cursor agents may use **Playwright** for browser/UI automation, visual checks, and end-to-end verification when a runnable app target exists.
+
 ## Commands (once Flutter scaffold exists)
 If `pubspec.yaml` is present, these are the standard commands:
 - Install deps: `flutter pub get`
@@ -70,4 +75,5 @@ If the scaffold is not present yet, create it first (and align folder structure 
 ## Guardrails / known risks to resolve early
 - **Auth mismatch**: UI shows phone-based login but backend may be email+password. Decide and document the mapping or update API expectations.
 - **Live AI protocol**: confirm backend expectations for audio (PCM rate/format) and frame cadence; handle close code `4003` guardrail errors with user-friendly messaging.
+- **Design source**: UI/UX is driven by `Figma.pdf`; match its visible screen states and copy before introducing new layout patterns.
 

@@ -161,7 +161,8 @@ lib/
 │   │   │   └── usecases/
 │   │   │       ├── login_usecase.dart
 │   │   │       ├── register_usecase.dart
-│   │   │       ├── social_login_usecase.dart
+│   │   │       ├── social_login_usecase.dart   # DEFERRED — needs Firebase setup
+│   │   │       ├── refresh_token_usecase.dart
 │   │   │       └── logout_usecase.dart
 │   │   └── presentation/
 │   │       ├── bloc/
@@ -556,12 +557,12 @@ lib/
 | `flutter_localizations` (SDK) | Material l10n |
 | `intl` | Date, number, currency formatting |
 
-**Firebase**
+**Firebase** *(social auth deferred — `firebase_auth` not needed for v1)*
 
 | Package | Purpose |
 |---------|---------|
 | `firebase_core` | Firebase init |
-| `firebase_auth` | Social login |
+| `firebase_auth` | Social login (DEFERRED — needs Firebase project setup) |
 | `firebase_analytics` | Usage tracking |
 | `firebase_crashlytics` | Crash reporting |
 
@@ -1131,10 +1132,10 @@ class ApiClient {
 
 ```dart
 // Consume SSE stream from backend
-Stream<String> streamChatResponse(String sessionId, String text) async* {
-  final response = await dio.get(
+Stream<String> streamChatResponse(String sessionId, String content, {String language = 'en'}) async* {
+  final response = await dio.post(
     '/chat/sessions/$sessionId/messages/stream',
-    queryParameters: {'text': text},
+    data: {'content': content, 'language': language},
     options: Options(headers: {'Accept': 'text/event-stream'}, responseType: ResponseType.stream),
   );
 
@@ -1144,9 +1145,10 @@ Stream<String> streamChatResponse(String sessionId, String text) async* {
     for (final line in data.split('\n')) {
       if (line.startsWith('data: ')) {
         final json = jsonDecode(line.substring(6));
-        yield json['chunk'];
-        if (json['done'] == true) return;
+        if (json.containsKey('text')) yield json['text'];
       }
+      // "done" event signals end of stream
+      if (line.startsWith('event: done')) return;
     }
   }
 }
@@ -1226,11 +1228,38 @@ class LiveAIWebSocketDatasource {
     _channel?.sink.add(jsonEncode({'type': 'video_frame', 'data': base64Encode(jpegData)}));
   }
 
+  void sendText(String text) {
+    _channel?.sink.add(jsonEncode({'type': 'text', 'text': text}));
+  }
+
   void endSession() {
     _channel?.sink.add(jsonEncode({'type': 'end_session'}));
   }
 }
 ```
+
+### 13.2.1 WebSocket Message Protocol
+
+**Client → Server:**
+
+| type | fields | description |
+|------|--------|-------------|
+| `audio` | `data` (base64 PCM) | Raw audio chunk |
+| `video_frame` | `data` (base64 JPEG) | Camera frame |
+| `text` | `text` (string) | Text message (subject to prompt injection guard) |
+| `end_session` | — | Gracefully end session |
+
+**Server → Client:**
+
+| type | fields | description |
+|------|--------|-------------|
+| `session_started` | `max_minutes` (float) | Session accepted; max duration in minutes |
+| `audio` | `data` (base64), `mime_type` | AI speech audio chunk |
+| `input_transcript` | `text` | User speech transcription |
+| `output_transcript` | `text` | AI speech transcription |
+| `turn_complete` | — | AI finished speaking |
+| `warning` | `message` | "1 minute remaining in this session." |
+| `error` | `code`, `message` | Guardrail rejection or session timeout |
 
 ### 13.3 LiveAI BLoC
 
@@ -1258,6 +1287,7 @@ Handle WebSocket close code **4003** with error frame:
 | `LIVE_AI_DAILY_LIMIT` | "Daily Live AI limit reached. Try again tomorrow." |
 | `LIVE_AI_SPEND_CAP` | "Live AI temporarily unavailable. Text chat works." |
 | `LIVE_AI_CONCURRENT` | "Close other Live AI session first." |
+| `SESSION_TIMEOUT` | "Session time limit reached." (sent mid-session when max minutes expire) |
 
 ---
 
@@ -1496,13 +1526,17 @@ On Tag (v*):
 
 | Endpoint | Notes |
 |----------|-------|
-| `POST /api/v1/auth/register` | Body uses `full_name`, not separate first/last |
-| `GET /api/v1/market/prices` | Direct list under `data`, not paginated |
-| `POST /api/v1/health/ask` | Creates chat session from health tab prefilled prompt |
-| `GET /api/v1/sheds/{id}/trends/eggs` | Returns `data_points[]` with date + counts |
-| `POST /api/v1/chat/messages/{id}/feedback` | Body `{ "value": 1 }` or `{ "value": -1 }` |
-| Live AI WebSocket | Token is query param `?token=...`, not header |
-| SSE chat streaming | `GET .../messages/stream?text=...` with `Accept: text/event-stream` |
+| `POST /api/v1/auth/register` | Body uses `full_name`, not separate first/last. Returns `{ access_token, refresh_token, user }` |
+| `POST /api/v1/auth/refresh` | Body `{ "refresh_token": "..." }`. Returns new access + refresh token (rotation) |
+| `GET /api/v1/market/prices` | Direct list under `data.prices`, not paginated. Includes `data_warning` if stale |
+| `POST /api/v1/health-tabs/{tab_id}/ask` | Prefix is `health-tabs` (not `health`). Creates chat session from prefilled prompt |
+| `GET /api/v1/sheds/{shed_id}/trends/eggs` | Returns `data_points[]` with date + counts. Also: `/trends/mortality`, `/trends/feed` |
+| `PUT /api/v1/chat/messages/{message_id}/feedback` | **PUT** not POST. Body `{ "feedback": 1 }` or `{ "feedback": -1 }` (field is `feedback`, not `value`) |
+| Live AI WebSocket | `ws://.../api/v1/live-ai/stream?token=...`. Token is query param, not header |
+| SSE chat streaming | **POST** `/api/v1/chat/sessions/{session_id}/messages/stream`. Body `{ "content": "...", "language": "en" }`. Returns SSE events with `{ "text": "chunk" }` |
+| `POST /api/v1/diagnosis` | Multipart: `image` file + optional `notes`, `language` fields. Creates chat session for follow-up |
+| `GET /api/v1/weather` | Accepts `lat`/`lon`, `region`, or uses user profile location. Includes poultry advisory |
+| `GET /api/v1/insights` | Returns insights with severity. `POST .../acknowledge`, `POST .../resolve` to update status |
 
 ---
 

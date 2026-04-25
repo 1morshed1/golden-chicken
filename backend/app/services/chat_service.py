@@ -7,6 +7,7 @@ from app.ai.gemini_client import GeminiClient, gemini_client
 from app.ai.intent import classify_intent
 from app.ai.prompts.system_prompt import get_system_prompt
 from app.ai.rag.retriever import Retriever
+from app.ai.safety import sanitize_user_input
 from app.config import settings
 from app.core.exceptions import AuthorizationError, NotFoundError
 from app.models.chat import ChatMessage, ChatSession, MessageRole
@@ -84,6 +85,8 @@ class ChatService:
         content: str,
         language: str = "en",
     ) -> tuple[ChatMessage, ChatMessage]:
+        content = sanitize_user_input(content)
+
         session = await session_repo.get_by_id(db, session_id)
         if not session or not session.is_active:
             raise NotFoundError("Chat session")
@@ -142,6 +145,8 @@ class ChatService:
         content: str,
         language: str = "en",
     ) -> AsyncGenerator[str, None]:
+        content = sanitize_user_input(content)
+
         session = await session_repo.get_by_id(db, session_id)
         if not session or not session.is_active:
             raise NotFoundError("Chat session")

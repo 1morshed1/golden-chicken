@@ -6,30 +6,35 @@
 - **Sprint 3 (AI Engine + Chat + Health Tabs): COMPLETE.**
 - **Sprint 4 (RAG + Image Diagnosis + Tasks): COMPLETE.**
 - **Sprint 5 (Weather + Market + Insights): COMPLETE.**
+- **Sprint 6 (Live AI WebSocket Gateway): COMPLETE.**
+- **Sprint 7 (Testing, Security & Polish): COMPLETE.**
 - Docker Compose stack validated and running (all 6 services healthy).
 - Initial Alembic migration applied. Health tabs seeded (6 diseases).
 
-## What was just completed (Sprint 5)
-- **Weather Service**: `app/services/weather_service.py` — OpenWeatherMap integration with Redis caching (1hr TTL), 12 Bangladesh regions mapped, poultry-specific heat/cold/humidity stress advisories.
-- **Weather Schemas**: `app/schemas/weather.py` — WeatherResponse, CurrentWeather, ForecastDay, WeatherAlert, PoultryWeatherAdvisory.
-- **Weather Routes**: `app/api/v1/weather.py` — GET /weather (lat/lon, region name, or user profile fallback), GET /weather/regions.
-- **Market Schemas**: `app/schemas/market.py` — MarketPriceResponse, MarketPriceListResponse, PriceHistoryEntry/Response.
-- **Market Repository**: `app/repositories/market_repository.py` — latest price query (subquery for most recent per product/market), history, stale marking, upsert.
-- **Market Service**: `app/services/market_service.py` — get latest prices with stale-data warning (48hr threshold), price history.
-- **Market Routes**: `app/api/v1/market.py` — GET /market/prices (product_type/region filters), GET /market/prices/{product_type}/history.
-- **Market Scrapers**: `app/workers/tasks/market_scraper.py` — DAM + TCB scrapers as Celery tasks with 3 retries, trend calculation (up/down/stable), stale marking on total failure.
-- **Insights Schemas**: `app/schemas/insights.py` — InsightResponse, InsightsSummary, InsightsListResponse, InsightAction.
-- **Insights Repository**: `app/repositories/insights_repository.py` — filtered queries, severity counts, unresolved actions, acknowledge/resolve.
-- **Insights Service**: `app/services/insights_service.py` — production analysis (egg drop warning/critical at 10%/20%, mortality spike at 2%/5%), overdue task detection (vaccination prioritized as critical), daily insight generation across all user sheds.
-- **Insights Routes**: `app/api/v1/insights.py` — GET /insights (severity/shed filter), GET /insights/actions, POST /insights/{id}/acknowledge, POST /insights/{id}/resolve, POST /insights/generate.
-- **Celery Beat Schedule**: Market scraping 2x/day (8AM, 6PM), weather refresh every 2hrs, daily insight generation at 6:30AM (all Asia/Dhaka).
-- **Sync DB Session**: `app/workers/db.py` — sync session factory for Celery workers using psycopg driver.
-- **Weather Refresh Task**: `app/workers/tasks/weather_refresh.py` — refreshes all BD region caches.
-- **Insights Generator Task**: `app/workers/tasks/insights_generator.py` — generates daily insights for all active users.
-- **Router Update**: Added weather, market, insights routers.
+## What was just completed (Post-Sprint 7 — Testing & Bug Fixes)
+- **Test infrastructure overhaul**: Separated root `tests/conftest.py` (mock_redis only) from `tests/integration/conftest.py` (DB-dependent fixtures). Fixed pytest-asyncio 1.3.0 event loop conflicts by using sync engine for DDL/cleanup and fresh async engine per test.
+- **Bug fix**: `app/workers/tasks/cleanup.py` had broken import (`sync_session_factory` → `task_db_session`). The daily data retention Celery task would have crashed at runtime.
+- **Test data fix**: `test_warning_egg_drop` had data that didn't actually trigger the -10% threshold (-9.8% instead). Fixed to -16.7%.
+- **bcrypt version**: Downgraded from 5.0.0 to 4.x for passlib 1.7.4 compatibility.
+- **Full test suite**: 103 tests passing (89 unit + 14 integration).
+
+## What was completed (Sprint 7)
+- **Test Infrastructure**: `tests/conftest.py` — async test DB (goldenchicken_test), mock Redis, httpx AsyncClient, auth_headers fixtures. Subdirectory structure with `__init__.py` for unit/integration/factories/fixtures.
+- **Auth Tests**: `tests/unit/services/test_auth_service.py` — 10 tests: password hashing, JWT create/decode/expired/invalid, register success/duplicate, login success/wrong password/nonexistent/inactive, logout blacklist, refresh rotation/revoked.
+- **Auth Integration Tests**: `tests/integration/test_auth_api.py` — 12 tests: register success/duplicate/short password/invalid email/with role, login success/wrong password/nonexistent, refresh success/invalid, logout success/no token, protected endpoint access.
+- **Production Tests**: `tests/unit/services/test_production_service.py` — 13 tests: trend calculation (up/down/stable/single/empty), egg summary (empty/single/multiple), chicken summary (empty/mortality), shed access (not found/wrong owner/ok), duplicate date conflict.
+- **Task Tests**: `tests/unit/services/test_task_service.py` — 10 tests: get task (not found/wrong owner/success), complete (non-recurring/daily/weekly generates next), today view (counts/empty), overdue tasks, delete (own/other user).
+- **AI Intent Tests**: `tests/unit/ai/test_intent.py` — 12 tests: keyword classification (disease EN/BN, feeding, vaccination, egg, broiler, weather, market, biosecurity), LLM fallback (ambiguous/unknown/valid).
+- **Prompt Injection Tests**: `tests/unit/ai/test_safety.py` — 14 tests: clean input, ignore instructions, you are now, system:, act as, pretend, jailbreak, bangla passes, mixed case, normal "ignore", do not tell, reveal prompt.
+- **Weather Tests**: `tests/unit/services/test_weather_service.py` — 7 tests: critical/warning heat, cold stress, high humidity, normal conditions, threshold boundaries.
+- **Insights Tests**: `tests/unit/services/test_insights_service.py` — 12 tests: egg production (critical/warning/stable/few records), mortality (critical/warning/low/none), overdue tasks (vaccination critical/many non-vaccination/none), acknowledge/resolve (not found/wrong user).
+- **Market Tests**: `tests/unit/services/test_market_service.py` — 5 tests: fresh data no warning, stale data warning, no data, boundary 48hrs, product type filter.
+- **Prompt Injection Safety Guard**: `app/ai/safety.py` — 13 regex patterns covering ignore/override/pretend/jailbreak/reveal/system/act-as. Wired into chat service (`send_message`, `send_message_stream`) and Live AI WebSocket (text messages).
+- **Data Retention Cleanup**: `app/workers/tasks/cleanup.py` — Celery task: removes expired+revoked sessions, hard-deletes soft-deleted users after 30 days. Scheduled at 3:00 AM daily via Celery Beat.
 
 ## Immediate next steps
-1. Begin **Sprint 6**: Live AI WebSocket gateway (Gemini Live), real-time audio/video forwarding, function calling tools, guardrails.
+1. **Sprint 8 (Deployment & Launch): DEFERRED** — user chose to defer until later.
+2. Social auth (Google/Facebook) also deferred — needs Firebase setup.
 
 ## Decisions currently in effect
 - **Modular monolith** architecture for v1.
@@ -46,3 +51,12 @@
 - Market prices use stale-data degradation strategy: serve last-known-good with warnings.
 - Celery Beat runs in Asia/Dhaka timezone for farmer-relevant schedules.
 - Insights generation is rule-based (production thresholds + task compliance); weather/market insights planned.
+- Live AI uses single-replica in-process session dict; multi-replica fan-out deferred to v1.1.
+- WS handler uses short-lived DB sessions per tool call, not Depends(get_db).
+- Live AI guardrails enforced server-side via Redis counters with 24hr TTL.
+- Session max minutes capped to min(config max, user remaining daily minutes).
+- Prompt injection guard applied to all user text input (chat + Live AI text messages).
+- Test DB uses separate `goldenchicken_test` database with per-test TRUNCATE cleanup (sync engine).
+- Unit tests run without Docker (mock-only); integration tests need postgres + redis containers.
+- Root `tests/conftest.py` has only `mock_redis`; DB fixtures live in `tests/integration/conftest.py`.
+- Data retention: expired sessions cleaned, soft-deleted users purged after 30 days.

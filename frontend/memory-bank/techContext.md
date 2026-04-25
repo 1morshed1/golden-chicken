@@ -10,6 +10,7 @@
 - DI: `get_it`, `injectable`, `injectable_generator`
 - FP/error modeling: `dartz`
 - Immutables/codegen: `freezed`, `freezed_annotation`, `build_runner`
+- Linting: `very_good_analysis`
 
 ### Routing
 - `go_router`
@@ -44,6 +45,14 @@
 
 ### Firebase (optional / planned)
 - `firebase_core`, `firebase_auth`, `firebase_analytics`, `firebase_crashlytics`
+
+## Testing (planned)
+- Unit/widget/integration: `flutter_test`, `bloc_test`, `mocktail` (or `mockito` + codegen)
+- Golden/screenshot regression: `golden_toolkit`
+
+## Agent/tooling support
+- **Context7 MCP** is available for fetching current docs for libraries, frameworks, SDKs, APIs, CLIs, and cloud services.
+- **Playwright** may be used for browser/UI automation, visual checks, and end-to-end verification when a runnable app target exists.
 
 ## Environments / flavors (planned)
 - `dev`, `staging`, `production` with different base URLs and logging levels

@@ -35,6 +35,10 @@ celery_app.conf.update(
             "task": "app.workers.tasks.insights_generator.generate_all_user_insights",
             "schedule": crontab(hour="6", minute="30"),
         },
+        "data-retention-cleanup": {
+            "task": "app.workers.tasks.cleanup.run_data_retention",
+            "schedule": crontab(hour="3", minute="0"),
+        },
     },
 )
 

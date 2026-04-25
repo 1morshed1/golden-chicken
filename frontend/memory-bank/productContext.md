@@ -22,6 +22,12 @@ Poultry farmers need **actionable, localized guidance** for day-to-day operation
 - **Low-friction navigation** via bottom tabs + drawer shortcuts
 - **Consistency**: shared widgets (buttons, fields, cards), predictable layout and spacing
 
+## Figma UI reference
+- `Figma.pdf` is the current UI/UX reference for visual implementation and visible copy.
+- The core shell uses Golden AI as the primary experience, with tip cards ("Water Check", "Biosec"), quick prompts, chat input, and a LIVE AI entry.
+- Live AI must show distinct user-facing states: **AI Assistant Live**, **AI Listening**, **AI Speaking**, **Camera Off**, and "AI is processing your question...".
+- Representative data in designs includes: 2,450 birds, AI Score 87%, 28d average age, 1,240 loyalty points, Dhaka market prices, and `+880` phone-number flows.
+
 ## Localization requirements
 - Two locales: **Bangla (`bn`) and English (`en`)**
 - Copy lives in ARB files; fonts differ by locale (BN: Hind Siliguri, EN: Plus Jakarta Sans)

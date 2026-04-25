@@ -7,6 +7,7 @@ from app.api.v1.farms import router as farms_router
 from app.api.v1.health_check import router as health_router
 from app.api.v1.health_tabs import router as health_tabs_router
 from app.api.v1.insights import router as insights_router
+from app.api.v1.live_ai import router as live_ai_router
 from app.api.v1.market import router as market_router
 from app.api.v1.production import router as production_router
 from app.api.v1.tasks import router as tasks_router
@@ -28,3 +29,4 @@ api_router.include_router(diagnosis_router)
 api_router.include_router(weather_router)
 api_router.include_router(market_router)
 api_router.include_router(insights_router)
+api_router.include_router(live_ai_router)

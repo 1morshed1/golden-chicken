@@ -26,8 +26,8 @@ class Settings(BaseSettings):
     # Gemini AI
     GEMINI_API_KEY: str = ""
     GEMINI_TEXT_MODEL: str = "gemini-2.0-flash"
-    GEMINI_LIVE_MODEL: str = "gemini-2.0-flash-live-001"
-    GEMINI_LITE_MODEL: str = "gemini-2.0-flash-lite"
+    GEMINI_LIVE_MODEL: str = "gemini-3.1-flash-live-preview"
+    GEMINI_LITE_MODEL: str = "gemini-3.1-flash-lite-preview"
 
     # RAG
     RAG_EMBEDDING_MODEL: str = "BAAI/bge-m3"

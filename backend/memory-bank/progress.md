@@ -62,6 +62,33 @@
   - Updated `app/workers/celery_app.py` — Beat schedule: market 2x/day, weather every 2hrs, insights 6:30AM
   - Updated `app/api/router.py` — weather, market, insights routers added
 
+- **Sprint 6 (Live AI WebSocket Gateway) — COMPLETE** (as of 2026-04-25):
+  - `app/ai/prompts/live_prompt.py` — bilingual EN/BN voice-optimized system prompts
+  - `app/ai/live/gemini_live_client.py` — GeminiLiveClient for gemini-2.0-flash-live-001 (LiveConnectConfig, Kore voice, transcription)
+  - `app/ai/live/session_manager.py` — LiveSessionManager (start/stop, audio/video/text send, receive responses with tool calls)
+  - `app/ai/live/tool_definitions.py` — LIVE_AI_TOOLS (get_weather, get_market_prices, get_flock_status, get_pending_tasks)
+  - `app/ai/live/tool_executor.py` — executes function calls with short-lived DB sessions, integrates weather/market/flock/tasks
+  - `app/ai/live/guardrails.py` — Redis-based guardrails (concurrent limit, daily minutes cap, global spend cap, session registration)
+  - `app/api/v1/live_ai.py` — WS /api/v1/live-ai/stream (JWT auth, guardrails, bidirectional forwarding, session timer, tool execution)
+  - Updated `app/api/router.py` — live_ai router added
+
+- **Sprint 7 (Testing, Security & Polish) — COMPLETE** (as of 2026-04-25):
+  - `tests/conftest.py` — async test DB, mock Redis, httpx AsyncClient, auth_headers fixtures
+  - `tests/unit/services/test_auth_service.py` — 10 tests (password, JWT, register, login, logout, refresh)
+  - `tests/integration/test_auth_api.py` — 12 tests (register, login, refresh, logout, protected endpoints)
+  - `tests/unit/services/test_production_service.py` — 13 tests (trends, summaries, shed access, conflicts)
+  - `tests/unit/services/test_task_service.py` — 10 tests (CRUD, complete, recurring, overdue, today)
+  - `tests/unit/ai/test_intent.py` — 12 tests (keyword + LLM fallback classification)
+  - `tests/unit/ai/test_safety.py` — 14 tests (injection patterns, clean input, bangla)
+  - `tests/unit/services/test_weather_service.py` — 7 tests (advisory thresholds)
+  - `tests/unit/services/test_insights_service.py` — 12 tests (egg production, mortality, overdue tasks, access control)
+  - `tests/unit/services/test_market_service.py` — 5 tests (stale data warning, filters)
+  - `app/ai/safety.py` — prompt injection guard (13 regex patterns), wired into chat service + Live AI WS
+  - `app/workers/tasks/cleanup.py` — data retention: expired sessions, soft-deleted users (30d). Celery Beat 3:00 AM.
+  - Updated `app/services/chat_service.py` — sanitize_user_input applied to send_message + send_message_stream
+  - Updated `app/api/v1/live_ai.py` — sanitize_user_input applied to text messages
+  - Updated `app/workers/celery_app.py` — data-retention-cleanup added to Beat schedule
+
 ## What's left to build (high-level)
 - [x] Run Docker stack and validate
 - [x] Generate initial Alembic migration
@@ -81,9 +108,14 @@
 - [x] Insights engine (production analysis + task compliance + daily generation)
 - [x] Celery Beat schedule (market, weather, insights)
 - [x] Sync DB session for Celery workers
+- [x] Live AI WebSocket gateway (Gemini Live client + session manager)
+- [x] Live AI function calling tools (weather, market, flock, tasks)
+- [x] Live AI guardrails (session limit, daily cap, concurrent limit, spend cap)
+- [x] Prompt injection safety guard
+- [x] Data retention cleanup task
+- [x] Unit + integration tests (103 tests across 10 test files — all passing)
 - [ ] Social auth (Google/Facebook — deferred, needs Firebase setup)
-- [ ] Live AI WebSocket gateway
-- [ ] Tests + security hardening + deployment
+- [ ] Deployment (Sprint 8)
 
 ## Current milestone snapshot
 - **Sprint 1**: COMPLETE (scaffold + models + core infra + health checks)
@@ -91,8 +123,9 @@
 - **Sprint 3**: COMPLETE (AI engine + chat + SSE streaming + health tabs + knowledge base)
 - **Sprint 4**: COMPLETE (RAG pipeline + image diagnosis + task management)
 - **Sprint 5**: COMPLETE (weather + market + insights + Celery Beat)
-- **Sprint 6**: NEXT (Live AI WebSocket gateway)
-- Sprints 7–8 remain per the plan.
+- **Sprint 6**: COMPLETE (Live AI WebSocket gateway + function calling + guardrails)
+- **Sprint 7**: COMPLETE (tests + prompt injection guard + data retention + security hardening)
+- **Sprint 8**: DEFERRED (deployment & launch — user chose to defer until later)
 
 ## Known issues / risks
 - Market price scraping reliability — DAM/TCB HTML may change without notice; stale-data strategy mitigates.
@@ -103,3 +136,8 @@
 - RAG models (bge-m3, bge-reranker-v2-m3) require ~1-2GB memory.
 - Knowledge base ingestion needs to be run after Alembic migration.
 - Insights engine currently rule-based; weather/market cross-analysis is basic.
+- Live AI session manager uses in-process dict — single replica only for v1.
+- Integration tests require running PostgreSQL + Redis containers (`docker compose up -d postgres redis`).
+- bcrypt must stay < 5.0.0 for passlib 1.7.4 compatibility (requirements.txt specifies `<5.0.0`).
+- `app/workers/tasks/cleanup.py` import was broken (fixed: `sync_session_factory` → `task_db_session`).
+- Test infra: root conftest has only `mock_redis`; DB fixtures in `tests/integration/conftest.py`. Unit tests run without Docker.

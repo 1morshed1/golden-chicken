@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:golden_chicken/features/production/domain/usecases/add_chicken_record.dart';
 import 'package:golden_chicken/features/production/domain/usecases/add_egg_record.dart';
 import 'package:golden_chicken/features/production/domain/usecases/get_flock_overview.dart';
+import 'package:golden_chicken/features/production/domain/usecases/get_sheds.dart';
 import 'package:golden_chicken/features/production/presentation/bloc/production_event.dart';
 import 'package:golden_chicken/features/production/presentation/bloc/production_state.dart';
 
@@ -10,11 +11,14 @@ class ProductionBloc extends Bloc<ProductionEvent, ProductionState> {
     required GetFlockOverview getFlockOverview,
     required AddEggRecord addEggRecord,
     required AddChickenRecord addChickenRecord,
+    required GetSheds getSheds,
   })  : _getFlockOverview = getFlockOverview,
         _addEggRecord = addEggRecord,
         _addChickenRecord = addChickenRecord,
+        _getSheds = getSheds,
         super(const ProductionInitial()) {
     on<FlockOverviewRequested>(_onFlockOverviewRequested);
+    on<ShedsRequested>(_onShedsRequested);
     on<EggRecordAdded>(_onEggRecordAdded);
     on<ChickenRecordAdded>(_onChickenRecordAdded);
   }
@@ -22,6 +26,7 @@ class ProductionBloc extends Bloc<ProductionEvent, ProductionState> {
   final GetFlockOverview _getFlockOverview;
   final AddEggRecord _addEggRecord;
   final AddChickenRecord _addChickenRecord;
+  final GetSheds _getSheds;
 
   Future<void> _onFlockOverviewRequested(
     FlockOverviewRequested event,
@@ -32,6 +37,18 @@ class ProductionBloc extends Bloc<ProductionEvent, ProductionState> {
     result.fold(
       (failure) => emit(ProductionError(failure.message)),
       (summary) => emit(ProductionLoaded(summary: summary)),
+    );
+  }
+
+  Future<void> _onShedsRequested(
+    ShedsRequested event,
+    Emitter<ProductionState> emit,
+  ) async {
+    emit(const ProductionLoading());
+    final result = await _getSheds();
+    result.fold(
+      (failure) => emit(ProductionError(failure.message)),
+      (sheds) => emit(ShedsLoaded(sheds)),
     );
   }
 

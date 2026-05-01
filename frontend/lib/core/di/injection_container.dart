@@ -4,6 +4,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:golden_chicken/core/network/api_client.dart';
 import 'package:golden_chicken/core/network/network_info.dart';
+import 'package:golden_chicken/core/services/audio_player_service.dart';
+import 'package:golden_chicken/core/services/audio_recorder_service.dart';
+import 'package:golden_chicken/core/services/camera_frame_service.dart';
+import 'package:golden_chicken/core/services/offline_mutation_queue.dart';
 import 'package:golden_chicken/features/auth/data/datasources/auth_local_datasource.dart';
 import 'package:golden_chicken/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:golden_chicken/features/auth/data/repositories/auth_repository_impl.dart';
@@ -48,6 +52,7 @@ import 'package:golden_chicken/features/production/domain/repositories/productio
 import 'package:golden_chicken/features/production/domain/usecases/add_chicken_record.dart';
 import 'package:golden_chicken/features/production/domain/usecases/add_egg_record.dart';
 import 'package:golden_chicken/features/production/domain/usecases/get_flock_overview.dart';
+import 'package:golden_chicken/features/production/domain/usecases/get_sheds.dart';
 import 'package:golden_chicken/features/production/presentation/bloc/production_bloc.dart';
 import 'package:golden_chicken/features/profile/data/datasources/profile_remote_datasource.dart';
 import 'package:golden_chicken/features/profile/data/repositories/profile_repository_impl.dart';
@@ -77,7 +82,15 @@ Future<void> initDependencies() async {
       () => NetworkInfoImpl(sl<Connectivity>()),
     )
     ..registerLazySingleton(() => ApiClient(secureStorage: sl()))
-    ..registerLazySingleton(() => sl<ApiClient>().dio);
+    ..registerLazySingleton(() => sl<ApiClient>().dio)
+    ..registerLazySingleton(
+      () => OfflineMutationQueue(
+        dio: sl(),
+        connectivity: sl(),
+      ),
+    );
+
+  await sl<OfflineMutationQueue>().init();
 
   // Auth
   _initAuth();
@@ -188,11 +201,13 @@ void _initProduction() {
     ..registerLazySingleton(() => GetFlockOverview(sl()))
     ..registerLazySingleton(() => AddEggRecord(sl()))
     ..registerLazySingleton(() => AddChickenRecord(sl()))
+    ..registerLazySingleton(() => GetSheds(sl()))
     ..registerFactory(
       () => ProductionBloc(
         getFlockOverview: sl(),
         addEggRecord: sl(),
         addChickenRecord: sl(),
+        getSheds: sl(),
       ),
     );
 }
@@ -277,10 +292,16 @@ void _initLiveAi() {
     ..registerLazySingleton<LiveAiRepository>(
       () => LiveAiRepositoryImpl(datasource: sl()),
     )
+    ..registerFactory(AudioRecorderService.new)
+    ..registerFactory(AudioPlayerService.new)
+    ..registerFactory(CameraFrameService.new)
     ..registerFactory(
       () => LiveAiBloc(
         repository: sl(),
         secureStorage: sl(),
+        audioRecorder: sl(),
+        audioPlayer: sl(),
+        cameraFrameService: sl(),
       ),
     );
 }

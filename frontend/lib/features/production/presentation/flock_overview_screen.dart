@@ -38,7 +38,8 @@ class _FlockOverviewView extends StatelessWidget {
       body: BlocBuilder<ProductionBloc, ProductionState>(
         builder: (context, state) => switch (state) {
           ProductionInitial() ||
-          ProductionLoading() =>
+          ProductionLoading() ||
+          ShedsLoaded() =>
             const AppLoading(),
           ProductionError(:final message) => AppErrorWidget(
               message: message,

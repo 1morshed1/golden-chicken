@@ -7,6 +7,7 @@ import 'package:golden_chicken/features/production/data/models/egg_record_model.
 import 'package:golden_chicken/features/production/domain/entities/chicken_record.dart';
 import 'package:golden_chicken/features/production/domain/entities/egg_record.dart';
 import 'package:golden_chicken/features/production/domain/entities/flock_summary.dart';
+import 'package:golden_chicken/features/production/domain/entities/shed.dart';
 import 'package:golden_chicken/features/production/domain/repositories/production_repository.dart';
 
 class ProductionRepositoryImpl implements ProductionRepository {
@@ -15,6 +16,16 @@ class ProductionRepositoryImpl implements ProductionRepository {
   }) : _remote = remoteDatasource;
 
   final ProductionRemoteDatasource _remote;
+
+  @override
+  Future<Either<Failure, List<Shed>>> getSheds() async {
+    try {
+      final sheds = await _remote.getSheds();
+      return Right(sheds);
+    } on DioException catch (e) {
+      return Left(_mapDioError(e));
+    }
+  }
 
   @override
   Future<Either<Failure, FlockSummary>> getFlockOverview() async {

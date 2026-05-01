@@ -42,3 +42,7 @@ final class LiveAiTextSent extends LiveAiEvent {
   @override
   List<Object?> get props => [text];
 }
+
+final class LiveAiCameraToggled extends LiveAiEvent {
+  const LiveAiCameraToggled();
+}

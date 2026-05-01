@@ -11,6 +11,10 @@ final class FlockOverviewRequested extends ProductionEvent {
   const FlockOverviewRequested();
 }
 
+final class ShedsRequested extends ProductionEvent {
+  const ShedsRequested();
+}
+
 final class EggRecordAdded extends ProductionEvent {
   const EggRecordAdded({
     required this.shedId,

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:golden_chicken/features/production/domain/entities/flock_summary.dart';
+import 'package:golden_chicken/features/production/domain/entities/shed.dart';
 
 sealed class ProductionState extends Equatable {
   const ProductionState();
@@ -32,6 +33,15 @@ final class ProductionError extends ProductionState {
 
   @override
   List<Object?> get props => [message];
+}
+
+final class ShedsLoaded extends ProductionState {
+  const ShedsLoaded(this.sheds);
+
+  final List<Shed> sheds;
+
+  @override
+  List<Object?> get props => [sheds];
 }
 
 final class RecordSaving extends ProductionState {

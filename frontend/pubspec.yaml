@@ -7,6 +7,7 @@ environment:
   sdk: ^3.11.5
 
 dependencies:
+  camera: ^0.11.1
   connectivity_plus: ^6.1.4
   dartz: ^0.10.1
   dio: ^5.8.0+1
@@ -22,8 +23,13 @@ dependencies:
   get_it: ^8.0.3
   go_router: ^14.8.1
   google_fonts: ^6.2.1
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
   intl: ^0.20.2
+  just_audio: ^0.9.42
   logger: ^2.5.0
+  permission_handler: ^11.4.0
+  record: ^5.2.1
   shared_preferences: ^2.5.3
   shimmer: ^3.0.0
   web_socket_channel: ^3.0.2
@@ -43,4 +49,26 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/lottie/
+
+  fonts:
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/plus_jakarta_sans/PlusJakartaSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/plus_jakarta_sans/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/plus_jakarta_sans/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/plus_jakarta_sans/PlusJakartaSans-Bold.ttf
+          weight: 700
+    - family: HindSiliguri
+      fonts:
+        - asset: assets/fonts/hind_siliguri/HindSiliguri-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/hind_siliguri/HindSiliguri-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/hind_siliguri/HindSiliguri-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/hind_siliguri/HindSiliguri-Bold.ttf
+          weight: 700
 

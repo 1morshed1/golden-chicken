@@ -1,3 +1,4 @@
+import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:golden_chicken/core/di/injection_container.dart';
@@ -16,81 +17,107 @@ class LiveAiScreen extends StatelessWidget {
     return BlocProvider(
       create: (_) => sl<LiveAiBloc>(),
       child: Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        title: const Text('Live AI'),
-        actions: [
-          BlocSelector<LiveAiBloc, LiveAiState, LiveSessionStatus>(
-            selector: (state) => state.status,
-            builder: (context, status) {
-              if (status == LiveSessionStatus.idle ||
-                  status == LiveSessionStatus.error) {
-                return const SizedBox.shrink();
-              }
-              return IconButton(
-                onPressed: () => context
-                    .read<LiveAiBloc>()
-                    .add(const LiveAiStopRequested()),
-                icon: const Icon(Icons.close),
-              );
-            },
-          ),
-        ],
-      ),
-      body: BlocConsumer<LiveAiBloc, LiveAiState>(
-        listenWhen: (prev, curr) =>
-            prev.errorMessage != curr.errorMessage &&
-            curr.errorMessage != null,
-        listener: (context, state) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage!),
-              backgroundColor: Colors.red,
-            ),
-          );
-        },
-        builder: (context, state) {
-          return Stack(
-            children: [
-              Center(
-                child: Column(
+        backgroundColor: Colors.black,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          title: const Text('Live AI'),
+          actions: [
+            BlocBuilder<LiveAiBloc, LiveAiState>(
+              buildWhen: (prev, curr) =>
+                  prev.status != curr.status ||
+                  prev.isCameraActive != curr.isCameraActive,
+              builder: (context, state) {
+                final isActive = state.status == LiveSessionStatus.listening ||
+                    state.status == LiveSessionStatus.aiSpeaking;
+                return Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      _statusIcon(state.status),
-                      size: 80,
-                      color: Colors.white24,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      _statusHint(state.status),
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: Colors.white38,
-                          ),
-                      textAlign: TextAlign.center,
-                    ),
+                    if (isActive)
+                      IconButton(
+                        onPressed: () => context
+                            .read<LiveAiBloc>()
+                            .add(const LiveAiCameraToggled()),
+                        icon: Icon(
+                          state.isCameraActive
+                              ? Icons.videocam
+                              : Icons.videocam_off,
+                        ),
+                      ),
+                    if (isActive)
+                      IconButton(
+                        onPressed: () => context
+                            .read<LiveAiBloc>()
+                            .add(const LiveAiStopRequested()),
+                        icon: const Icon(Icons.close),
+                      ),
                   ],
+                );
+              },
+            ),
+          ],
+        ),
+        body: BlocConsumer<LiveAiBloc, LiveAiState>(
+          listenWhen: (prev, curr) =>
+              prev.errorMessage != curr.errorMessage &&
+              curr.errorMessage != null,
+          listener: (context, state) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(state.errorMessage!),
+                backgroundColor: Colors.red,
+              ),
+            );
+          },
+          builder: (context, state) {
+            return Stack(
+              children: [
+                if (state.isCameraActive)
+                  _CameraPreview(
+                    controller: context
+                        .read<LiveAiBloc>()
+                        .cameraFrameService
+                        .controller,
+                  )
+                else
+                  Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _statusIcon(state.status),
+                          size: 80,
+                          color: Colors.white24,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _statusHint(state.status),
+                          style:
+                              Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                    color: Colors.white38,
+                                  ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                LiveTranscriptOverlay(
+                  inputTranscript: state.inputTranscript,
+                  outputTranscript: state.outputTranscript,
                 ),
-              ),
-              LiveTranscriptOverlay(
-                inputTranscript: state.inputTranscript,
-                outputTranscript: state.outputTranscript,
-              ),
-              LiveAiControls(
-                status: state.status,
-                onStart: () => context
-                    .read<LiveAiBloc>()
-                    .add(const LiveAiStartRequested()),
-                onStop: () => context
-                    .read<LiveAiBloc>()
-                    .add(const LiveAiStopRequested()),
-              ),
-            ],
-          );
-        },
-      ),
+                LiveAiControls(
+                  status: state.status,
+                  onStart: () => context
+                      .read<LiveAiBloc>()
+                      .add(const LiveAiStartRequested()),
+                  onStop: () => context
+                      .read<LiveAiBloc>()
+                      .add(const LiveAiStopRequested()),
+                ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -111,4 +138,29 @@ class LiveAiScreen extends StatelessWidget {
         LiveSessionStatus.aiSpeaking => '',
         LiveSessionStatus.error => 'Something went wrong.\nTap to try again.',
       };
+}
+
+class _CameraPreview extends StatelessWidget {
+  const _CameraPreview({required this.controller});
+
+  final CameraController? controller;
+
+  @override
+  Widget build(BuildContext context) {
+    if (controller == null || !controller!.value.isInitialized) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white24),
+      );
+    }
+    return SizedBox.expand(
+      child: FittedBox(
+        fit: BoxFit.cover,
+        child: SizedBox(
+          width: controller!.value.previewSize!.height,
+          height: controller!.value.previewSize!.width,
+          child: CameraPreview(controller!),
+        ),
+      ),
+    );
+  }
 }

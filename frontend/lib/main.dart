@@ -5,10 +5,12 @@ import 'package:golden_chicken/core/di/injection_container.dart';
 import 'package:golden_chicken/core/l10n/locale_cubit.dart';
 import 'package:golden_chicken/core/theme/theme_cubit.dart';
 import 'package:golden_chicken/features/auth/presentation/bloc/auth_bloc.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
   await initDependencies();
 
   runApp(

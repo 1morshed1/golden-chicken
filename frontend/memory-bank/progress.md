@@ -1,9 +1,9 @@
 # Progress — Golden Chicken Frontend
 
-## What exists now (130 Dart source files)
+## What exists now (~145 Dart source files)
 
 ### Core (from Sprint 1)
-- Design system: AppColors, AppTypography (google_fonts), AppSpacing, AppRadius, AppTheme (light+dark)
+- Design system: AppColors, AppTypography (bundled fonts), AppSpacing, AppRadius, AppTheme (light+dark)
 - Networking: Dio ApiClient with Auth/Logging/Error interceptors, Failure hierarchy, NetworkInfo, ApiEndpoints
 - DI: get_it with all externals, core services, and all features registered (auth, chat, health, production, market, tasks, profile, insights, live_ai)
 - Routing: GoRouter with reactive auth-driven redirects, splash → language → auth → 4-tab shell + standalone routes for chat detail, flock overview, egg/chicken records, tasks, create task, edit profile, insights, live AI
@@ -25,10 +25,10 @@
 - **Data**: Models with JSON parsing, HealthRemoteDatasource, HealthRepositoryImpl
 - **Presentation**: HealthBloc (tab selection, search, ask AI), HealthTabScreen (search, tab filter, 2-column grid), DiseaseCard, HealthTabFilter widgets
 
-### Production (Sprint 3)
-- **Domain**: FlockSummary/FarmAlert/FeedPlanItem/EggRecord/ChickenRecord entities, ProductionRepository, 3 use cases
-- **Data**: Full models with JSON serialization, ProductionRemoteDatasource, ProductionRepositoryImpl
-- **Presentation**: ProductionBloc, FlockOverviewScreen (stat cards, AI score, alerts, feed plan), EggRecordsScreen, ChickenRecordsScreen, ProductionStatCard widget
+### Production (Sprint 3 + 6)
+- **Domain**: FlockSummary/FarmAlert/FeedPlanItem/EggRecord/ChickenRecord/Shed entities, ProductionRepository, 4 use cases (incl. GetSheds)
+- **Data**: Full models with JSON serialization, ShedModel, ProductionRemoteDatasource (incl. getSheds), ProductionRepositoryImpl
+- **Presentation**: ProductionBloc (incl. ShedsRequested event), FlockOverviewScreen (stat cards, AI score, alerts, feed plan), EggRecordsScreen (shed picker, form), ChickenRecordsScreen (shed picker, form), ProductionStatCard, ShedPicker widgets
 
 ### Market Insights (Sprint 4)
 - **Domain**: MarketPrice entity (product, price, unit, changePercent), MarketTip entity (message, confidence), PriceTrendPoint entity, MarketRepository interface, GetMarketPrices/GetPriceTrend use cases
@@ -50,13 +50,31 @@
 - **Data**: FarmInsightModel (JSON with severity parsing), InsightsRemoteDatasource (GET /insights, PATCH /insights/{id}/acknowledge), InsightsRepositoryImpl
 - **Presentation**: InsightsBloc (load + acknowledge with auto-refresh), InsightsScreen (active/acknowledged sections, pull-to-refresh, empty state), InsightCard widget (severity-colored left border, severity icon, action badge, acknowledge button)
 
-### Live AI (Sprint 5)
+### Live AI (Sprint 5 + 6)
 - **Domain**: LiveAiMessage entity (type enum: sessionStarted/audio/inputTranscript/outputTranscript/turnComplete/warning/error), LiveSessionStatus enum (idle/connecting/listening/aiSpeaking/error), LiveAiRepository interface (connect/sendAudio/sendVideoFrame/sendText/endSession/disconnect)
 - **Data**: LiveAiWebSocketDatasource (WebSocket connect with token, JSON message parsing, send payloads), LiveAiRepositoryImpl (base64 audio encoding, delegates to WS datasource)
-- **Presentation**: LiveAiBloc (session lifecycle state machine, token from FlutterSecureStorage, stream subscription management), LiveAiScreen (dark theme, status icons/hints, BlocConsumer with error snackbar), LiveTranscriptOverlay widget (input/output transcript bubbles), LiveAiControls widget (mic/stop button with glow shadow, status label)
+- **Presentation**: LiveAiBloc (session lifecycle state machine with AudioRecorderService/AudioPlayerService/CameraFrameService, token from FlutterSecureStorage, mic permission check, audio stream piping, camera toggle, audio playback queue), LiveAiScreen (dark theme, camera preview toggle, status icons/hints, BlocConsumer with error snackbar), LiveTranscriptOverlay widget (input/output transcript bubbles), LiveAiControls widget (mic/stop button with glow shadow, status label)
+
+### Core Services (Sprint 6)
+- **AudioRecorderService**: PCM 16kHz mono recording via `record` package, streams audio chunks
+- **AudioPlayerService**: PCM 24kHz playback via `just_audio`, WAV header wrapping, queue-based chunk playback
+- **CameraFrameService**: JPEG frame capture at ≤1 FPS via `camera` package, back camera preference, base64 encoding
+- **OfflineMutationQueue**: Hive-backed queue for failed writes, auto-sync on connectivity change via connectivity_plus, supports POST/PATCH/PUT
 
 ### Onboarding
 - SplashScreen (brand splash → auth check → redirect), LanguageSelectionScreen (EN/BN cards)
+
+### Fonts (Sprint 6)
+- Plus Jakarta Sans (Regular/Medium/SemiBold/Bold) bundled in assets/fonts/
+- Hind Siliguri (Regular/Medium/SemiBold/Bold) bundled in assets/fonts/
+- AppTypography uses local fontFamily references instead of google_fonts network calls
+
+### Tests (Sprint 6)
+- AuthBloc: 6 tests (login success/failure, logout, token check valid/invalid)
+- ProductionBloc: 5 tests (initial state, sheds load, flock overview, egg record add)
+- TaskBloc: 5 tests (load, error, complete+refresh, create+refresh)
+- OfflineMutationQueue: 1 test (serialization roundtrip)
+- **Total: 17 tests, all passing**
 
 ## Sprint completion status
 - **Sprint 1**: ✅ COMPLETE
@@ -64,12 +82,14 @@
 - **Sprint 3**: ✅ COMPLETE — Chat (SSE streaming) + Health Center + Production
 - **Sprint 4**: ✅ COMPLETE — Market Insights (fl_chart) + Tasks (CRUD + recurrence)
 - **Sprint 5**: ✅ COMPLETE — Profile (loyalty card, preferences, edit) + Insights (severity cards, acknowledge) + Live AI (WebSocket state machine, transcript overlay)
-- **Sprint 6–7**: Not started
+- **Sprint 6**: ✅ COMPLETE — Live AI audio/camera services, offline mutation queue, bundled fonts, shed picker, unit tests (17 passing)
+- **Sprint 7**: Not started
 
 ## Known issues / watch-outs
 - Phone→email mapping: UI collects phone, maps to `{phone}@goldenchicken.ai` for backend
 - Live AI protocol details need confirmation (audio/video formats, close codes)
-- Cache TTLs and offline queues not yet implemented
-- Fonts loaded via google_fonts (network) — bundle for production
-- Shed ID is hardcoded to 'default' in record screens — need shed picker
+- Live AI: handle close code 4003 (guardrail) with user-friendly message
+- StreamAudioSource is experimental in just_audio
+- Offline queue: non-network errors cause mutation discard (may need dead-letter handling)
+- google_fonts package still in pubspec but no longer imported (can be removed)
 - Tip banners and AI message bubble on home are static placeholder content

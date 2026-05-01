@@ -7,24 +7,28 @@ class LiveAiState extends Equatable {
     this.inputTranscript = '',
     this.outputTranscript = '',
     this.errorMessage,
+    this.isCameraActive = false,
   });
 
   final LiveSessionStatus status;
   final String inputTranscript;
   final String outputTranscript;
   final String? errorMessage;
+  final bool isCameraActive;
 
   LiveAiState copyWith({
     LiveSessionStatus? status,
     String? inputTranscript,
     String? outputTranscript,
     String? errorMessage,
+    bool? isCameraActive,
   }) {
     return LiveAiState(
       status: status ?? this.status,
       inputTranscript: inputTranscript ?? this.inputTranscript,
       outputTranscript: outputTranscript ?? this.outputTranscript,
       errorMessage: errorMessage,
+      isCameraActive: isCameraActive ?? this.isCameraActive,
     );
   }
 
@@ -34,5 +38,6 @@ class LiveAiState extends Equatable {
         inputTranscript,
         outputTranscript,
         errorMessage,
+        isCameraActive,
       ];
 }

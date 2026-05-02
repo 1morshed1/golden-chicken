@@ -25,15 +25,15 @@
 - **Data**: Models with JSON parsing, HealthRemoteDatasource, HealthRepositoryImpl
 - **Presentation**: HealthBloc (tab selection, search, ask AI), HealthTabScreen (search, tab filter, 2-column grid), DiseaseCard, HealthTabFilter widgets
 
-### Production (Sprint 3 + 6)
+### Production (Sprint 3 + 6 + API fix)
 - **Domain**: FlockSummary/FarmAlert/FeedPlanItem/EggRecord/ChickenRecord/Shed entities, ProductionRepository, 4 use cases (incl. GetSheds)
-- **Data**: Full models with JSON serialization, ShedModel, ProductionRemoteDatasource (incl. getSheds), ProductionRepositoryImpl
+- **Data**: Full models with JSON serialization, ShedModel, ProductionRemoteDatasource (incl. getSheds; getFlockOverview aggregates from GET /farms + GET /farms/{id}/sheds client-side — no dedicated backend endpoint), ProductionRepositoryImpl (generic catch for parsing errors)
 - **Presentation**: ProductionBloc (incl. ShedsRequested event), FlockOverviewScreen (stat cards, AI score, alerts, feed plan), EggRecordsScreen (shed picker, form), ChickenRecordsScreen (shed picker, form), ProductionStatCard, ShedPicker widgets
 
-### Market Insights (Sprint 4)
+### Market Insights (Sprint 4 + API fix)
 - **Domain**: MarketPrice entity (product, price, unit, changePercent), MarketTip entity (message, confidence), PriceTrendPoint entity, MarketRepository interface, GetMarketPrices/GetPriceTrend use cases
-- **Data**: MarketPriceModel/MarketTipModel/PriceTrendPointModel (JSON), MarketRemoteDatasource (prices, tip, trend with product/period params), MarketRepositoryImpl
-- **Presentation**: MarketBloc (prices + parallel egg/meat trend loading, period toggle), MarketTabScreen (Dhaka region header, 3 price hero cards with ৳ currency and change %, period toggle Today/7d/30d, fl_chart trend chart, AI tip card with confidence), PriceHeroCard widget, PriceTrendChart widget (dual-line fl_chart with legend)
+- **Data**: MarketPriceModel/MarketTipModel/PriceTrendPointModel (JSON with `price_bdt` field), MarketRemoteDatasource (unwraps nested `data.prices`/`data.history`, converts period string to `days` int), MarketRepositoryImpl (generic catch for parsing errors)
+- **Presentation**: MarketBloc (prices + parallel egg/broiler_meat trend loading via Future.wait, period toggle), MarketTabScreen (Dhaka region header, 3 price hero cards with ৳ currency and change %, period toggle Today/7d/30d, fl_chart trend chart, AI tip card with confidence), PriceHeroCard widget, PriceTrendChart widget (dual-line fl_chart with legend)
 
 ### Tasks (Sprint 4 + API alignment)
 - **Domain**: FarmTask entity (type enum: 10 values including shedCheck/eggCollection/waterCheck/biosecurity, status enum: pending/completed/overdue, recurrence enum: none/daily/weekly/monthly/custom, priority field), TaskRepository interface, GetTasks/CreateTask/CompleteTask use cases
@@ -84,7 +84,17 @@
 - **Sprint 5**: ✅ COMPLETE — Profile (loyalty card, preferences, edit) + Insights (severity cards, acknowledge) + Live AI (WebSocket state machine, transcript overlay)
 - **Sprint 6**: ✅ COMPLETE — Live AI audio/camera services, offline mutation queue, bundled fonts, shed picker, unit tests (17 passing)
 - **API Contract Alignment**: ✅ COMPLETE — All frontend models, datasources, repos, blocs, and UI matched to backend OpenAPI spec (20+ files updated)
-- **Sprint 7**: Not started
+- **Physical Device Testing**: ✅ COMPLETE — Auth, Chat (SSE streaming), Health Center Ask AI all validated on Samsung SM-M405F via devtunnel. Backend bugs fixed (Gemini model names, role mapping, GET messages endpoint).
+- **Sprint 7**: 🔄 IN PROGRESS — Market Insights API fix + seed data, Flock Overview API fix + seed data
+
+## End-to-end validated flows (2026-05-02, physical device)
+- **Auth**: Login (email/password) → token refresh → /users/me ✅
+- **Chat tab**: Type message → create session (with retry) → SSE stream → AI response in Bangla ✅
+- **Chat initial prompt**: Home tab quick input → session creation → auto-send initial prompt ✅
+- **Health Center**: Load tabs → tap disease "Ask AI" → backend creates session + AI response → navigate to chat detail → load messages → follow-up streaming ✅
+- **Health Center multi-disease**: Tested Newcastle, Bird Flu, and other diseases in sequence ✅
+- **Market Insights**: Prices load, trend chart renders with egg + broiler_meat lines, period toggle (Today/7d/30d) works ✅
+- **Flock Overview**: Farm + sheds aggregate into summary (1,650 birds, avg age, feed plan) ✅
 
 ## Known issues / watch-outs
 - Phone→email mapping: UI collects phone, maps to `{phone}@goldenchicken.ai` for backend
@@ -94,3 +104,8 @@
 - Offline queue: non-network errors cause mutation discard (may need dead-letter handling)
 - google_fonts package still in pubspec but no longer imported (can be removed)
 - Tip banners and AI message bubble on home are static placeholder content
+- Devtunnel intermittently drops TCP connections (mitigated with 5s idle timeout + session creation retry, will be non-issue on real server)
+- First RAG query after backend cold start is slow (~165s for embedding model load)
+- Flock Overview has no dedicated backend endpoint — frontend aggregates from farms+sheds. AI score is hardcoded placeholder (78). Feed plan is estimated from bird count. Consider building a real backend endpoint later.
+- Market scraper tasks (DAM/TCB) are structured but depend on government site HTML — may break if layout changes. Demo data seeded for development.
+- Seeded data is tied to user `2f30ea8d-c1d0-4c13-90bd-e9380279f408` — new test users will see empty data

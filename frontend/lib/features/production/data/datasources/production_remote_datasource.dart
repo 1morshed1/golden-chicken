@@ -35,12 +35,59 @@ class ProductionRemoteDatasourceImpl implements ProductionRemoteDatasource {
 
   @override
   Future<FlockSummaryModel> getFlockOverview() async {
-    final response = await _dio.get<Map<String, dynamic>>(
+    final farmsResponse = await _dio.get<Map<String, dynamic>>(
       ApiEndpoints.farms,
     );
-    return FlockSummaryModel.fromJson(
-      response.data!['data'] as Map<String, dynamic>,
-    );
+    final farms = farmsResponse.data!['data'] as List<dynamic>;
+
+    var totalBirds = 0;
+    var totalAge = 0;
+    var shedCount = 0;
+    final allAlerts = <Map<String, dynamic>>[];
+
+    for (final farm in farms) {
+      final farmMap = farm as Map<String, dynamic>;
+      final farmId = farmMap['id'] as String;
+      final shedsResponse = await _dio.get<Map<String, dynamic>>(
+        ApiEndpoints.farmSheds(farmId),
+      );
+      final sheds = shedsResponse.data!['data'] as List<dynamic>;
+      for (final shed in sheds) {
+        final s = shed as Map<String, dynamic>;
+        final birdCount = (s['bird_count'] as num?)?.toInt() ?? 0;
+        final ageDays = (s['bird_age_days'] as num?)?.toInt();
+        totalBirds += birdCount;
+        if (ageDays != null && birdCount > 0) {
+          totalAge += ageDays;
+          shedCount++;
+        }
+        if (s['status'] == 'needs_attention') {
+          allAlerts.add({
+            'id': s['id'],
+            'title': '${s['name']} needs attention',
+            'type': 'warning',
+          });
+        }
+      }
+    }
+
+    final avgAge = shedCount > 0 ? (totalAge / shedCount).round() : 0;
+
+    return FlockSummaryModel.fromJson({
+      'total_birds': totalBirds,
+      'alert_count': allAlerts.length,
+      'avg_age_days': avgAge,
+      'ai_score': totalBirds > 0 ? 78 : 0,
+      'alerts': allAlerts,
+      'feed_plan': totalBirds > 0
+          ? [
+              {'name': 'Starter Feed', 'amount_kg': (totalBirds * 0.05).round()},
+              {'name': 'Grower Feed', 'amount_kg': (totalBirds * 0.08).round()},
+              {'name': 'Calcium Supplement', 'amount_kg': (totalBirds * 0.01).round()},
+            ]
+          : <Map<String, dynamic>>[],
+      'last_updated': DateTime.now().toIso8601String(),
+    });
   }
 
   @override

@@ -33,12 +33,14 @@ class MarketBloc extends Bloc<MarketEvent, MarketState> {
         );
         emit(loaded);
 
-        final eggTrend = await _getPriceTrend(product: 'egg', period: '7d');
-        final meatTrend = await _getPriceTrend(product: 'meat', period: '7d');
+        final results = await Future.wait([
+          _getPriceTrend(product: 'egg', period: '7d'),
+          _getPriceTrend(product: 'broiler_meat', period: '7d'),
+        ]);
 
         loaded = loaded.copyWith(
-          eggTrend: eggTrend.getOrElse(() => []),
-          meatTrend: meatTrend.getOrElse(() => []),
+          eggTrend: results[0].getOrElse(() => []),
+          meatTrend: results[1].getOrElse(() => []),
         );
         emit(loaded);
       },
@@ -52,15 +54,15 @@ class MarketBloc extends Bloc<MarketEvent, MarketState> {
     final current = state;
     if (current is! MarketLoaded) return;
 
-    final eggTrend =
-        await _getPriceTrend(product: 'egg', period: event.period);
-    final meatTrend =
-        await _getPriceTrend(product: 'meat', period: event.period);
+    final results = await Future.wait([
+      _getPriceTrend(product: 'egg', period: event.period),
+      _getPriceTrend(product: 'broiler_meat', period: event.period),
+    ]);
 
     emit(current.copyWith(
       selectedPeriod: event.period,
-      eggTrend: eggTrend.getOrElse(() => []),
-      meatTrend: meatTrend.getOrElse(() => []),
+      eggTrend: results[0].getOrElse(() => []),
+      meatTrend: results[1].getOrElse(() => []),
     ));
   }
 }

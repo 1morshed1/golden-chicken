@@ -45,7 +45,7 @@ class PriceTrendPointModel extends PriceTrendPoint {
   factory PriceTrendPointModel.fromJson(Map<String, dynamic> json) {
     return PriceTrendPointModel(
       date: DateTime.parse(json['date'] as String),
-      price: (json['price'] as num).toDouble(),
+      price: (json['price_bdt'] as num).toDouble(),
     );
   }
 }

@@ -21,8 +21,9 @@ class MarketRemoteDatasourceImpl implements MarketRemoteDatasource {
     final response = await _dio.get<Map<String, dynamic>>(
       ApiEndpoints.marketPrices,
     );
-    final data = response.data!['data'] as List<dynamic>;
-    return data
+    final wrapper = response.data!['data'] as Map<String, dynamic>;
+    final prices = wrapper['prices'] as List<dynamic>;
+    return prices
         .map((e) => MarketPriceModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
@@ -42,12 +43,19 @@ class MarketRemoteDatasourceImpl implements MarketRemoteDatasource {
     required String product,
     required String period,
   }) async {
+    final days = switch (period) {
+      'today' => 1,
+      '7d' => 7,
+      '30d' => 30,
+      _ => 7,
+    };
     final response = await _dio.get<Map<String, dynamic>>(
       ApiEndpoints.marketPriceHistory(product),
-      queryParameters: {'period': period},
+      queryParameters: {'days': days},
     );
-    final data = response.data!['data'] as List<dynamic>;
-    return data
+    final wrapper = response.data!['data'] as Map<String, dynamic>;
+    final history = wrapper['history'] as List<dynamic>;
+    return history
         .map(
           (e) => PriceTrendPointModel.fromJson(e as Map<String, dynamic>),
         )

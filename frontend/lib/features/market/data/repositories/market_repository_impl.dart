@@ -18,6 +18,8 @@ class MarketRepositoryImpl implements MarketRepository {
       return Right(prices);
     } on DioException catch (e) {
       return Left(_mapDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
   }
 
@@ -28,6 +30,8 @@ class MarketRepositoryImpl implements MarketRepository {
       return Right(tip);
     } on DioException catch (e) {
       return Left(_mapDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
   }
 
@@ -44,6 +48,8 @@ class MarketRepositoryImpl implements MarketRepository {
       return Right(trend);
     } on DioException catch (e) {
       return Left(_mapDioError(e));
+    } catch (e) {
+      return Left(ServerFailure(e.toString()));
     }
   }
 

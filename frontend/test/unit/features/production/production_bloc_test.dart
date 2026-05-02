@@ -67,12 +67,12 @@ void main() {
     blocTest<ProductionBloc, ProductionState>(
       'emits [ProductionLoading, ShedsLoaded] on success',
       build: () {
-        when(() => mockGetSheds()).thenAnswer(
+        when(() => mockGetSheds('default')).thenAnswer(
           (_) async => const Right(testSheds),
         );
         return bloc;
       },
-      act: (bloc) => bloc.add(const ShedsRequested()),
+      act: (bloc) => bloc.add(const ShedsRequested('default')),
       expect: () => [
         const ProductionLoading(),
         const ShedsLoaded(testSheds),
@@ -82,12 +82,12 @@ void main() {
     blocTest<ProductionBloc, ProductionState>(
       'emits [ProductionLoading, ProductionError] on failure',
       build: () {
-        when(() => mockGetSheds()).thenAnswer(
+        when(() => mockGetSheds('default')).thenAnswer(
           (_) async => const Left(NetworkFailure()),
         );
         return bloc;
       },
-      act: (bloc) => bloc.add(const ShedsRequested()),
+      act: (bloc) => bloc.add(const ShedsRequested('default')),
       expect: () => [
         const ProductionLoading(),
         isA<ProductionError>(),

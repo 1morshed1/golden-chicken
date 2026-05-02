@@ -6,12 +6,15 @@ import 'package:golden_chicken/features/production/data/models/flock_summary_mod
 import 'package:golden_chicken/features/production/data/models/shed_model.dart';
 
 abstract class ProductionRemoteDatasource {
-  Future<List<ShedModel>> getSheds();
+  Future<List<ShedModel>> getSheds(String farmId);
   Future<FlockSummaryModel> getFlockOverview();
   Future<List<EggRecordModel>> getEggRecords(String shedId);
-  Future<EggRecordModel> addEggRecord(EggRecordModel record);
+  Future<EggRecordModel> addEggRecord(String shedId, EggRecordModel record);
   Future<List<ChickenRecordModel>> getChickenRecords(String shedId);
-  Future<ChickenRecordModel> addChickenRecord(ChickenRecordModel record);
+  Future<ChickenRecordModel> addChickenRecord(
+    String shedId,
+    ChickenRecordModel record,
+  );
 }
 
 class ProductionRemoteDatasourceImpl implements ProductionRemoteDatasource {
@@ -20,9 +23,9 @@ class ProductionRemoteDatasourceImpl implements ProductionRemoteDatasource {
   final Dio _dio;
 
   @override
-  Future<List<ShedModel>> getSheds() async {
+  Future<List<ShedModel>> getSheds(String farmId) async {
     final response = await _dio.get<Map<String, dynamic>>(
-      ApiEndpoints.sheds,
+      ApiEndpoints.farmSheds(farmId),
     );
     final data = response.data!['data'] as List<dynamic>;
     return data
@@ -35,13 +38,15 @@ class ProductionRemoteDatasourceImpl implements ProductionRemoteDatasource {
     final response = await _dio.get<Map<String, dynamic>>(
       ApiEndpoints.farms,
     );
-    return FlockSummaryModel.fromJson(response.data!['data'] as Map<String, dynamic>);
+    return FlockSummaryModel.fromJson(
+      response.data!['data'] as Map<String, dynamic>,
+    );
   }
 
   @override
   Future<List<EggRecordModel>> getEggRecords(String shedId) async {
     final response = await _dio.get<Map<String, dynamic>>(
-      ApiEndpoints.eggTrends(shedId),
+      ApiEndpoints.eggRecords(shedId),
     );
     final data = response.data!['data'] as List<dynamic>;
     return data
@@ -50,18 +55,23 @@ class ProductionRemoteDatasourceImpl implements ProductionRemoteDatasource {
   }
 
   @override
-  Future<EggRecordModel> addEggRecord(EggRecordModel record) async {
+  Future<EggRecordModel> addEggRecord(
+    String shedId,
+    EggRecordModel record,
+  ) async {
     final response = await _dio.post<Map<String, dynamic>>(
-      ApiEndpoints.eggTrends(record.shedId),
+      ApiEndpoints.eggRecords(shedId),
       data: record.toJson(),
     );
-    return EggRecordModel.fromJson(response.data!['data'] as Map<String, dynamic>);
+    return EggRecordModel.fromJson(
+      response.data!['data'] as Map<String, dynamic>,
+    );
   }
 
   @override
   Future<List<ChickenRecordModel>> getChickenRecords(String shedId) async {
     final response = await _dio.get<Map<String, dynamic>>(
-      '${ApiEndpoints.sheds}/$shedId/records/chickens',
+      ApiEndpoints.chickenRecords(shedId),
     );
     final data = response.data!['data'] as List<dynamic>;
     return data
@@ -71,10 +81,11 @@ class ProductionRemoteDatasourceImpl implements ProductionRemoteDatasource {
 
   @override
   Future<ChickenRecordModel> addChickenRecord(
+    String shedId,
     ChickenRecordModel record,
   ) async {
     final response = await _dio.post<Map<String, dynamic>>(
-      '${ApiEndpoints.sheds}/${record.shedId}/records/chickens',
+      ApiEndpoints.chickenRecords(shedId),
       data: record.toJson(),
     );
     return ChickenRecordModel.fromJson(

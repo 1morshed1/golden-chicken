@@ -35,7 +35,8 @@ class _SignupScreenState extends State<SignupScreen> {
   void _onSignup() {
     if (!_formKey.currentState!.validate()) return;
 
-    final phone = _phoneController.text.trim();
+    var phone = _phoneController.text.trim();
+    if (!phone.startsWith('0')) phone = '0$phone';
     final email = '$phone@goldenchicken.ai';
 
     context.read<AuthBloc>().add(
@@ -151,10 +152,9 @@ class _SignupScreenState extends State<SignupScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(l10n.alreadyHaveAccount),
-                      AppButton(
-                        label: l10n.login,
-                        variant: AppButtonVariant.text,
+                      TextButton(
                         onPressed: () => context.go('/auth/login'),
+                        child: Text(l10n.login),
                       ),
                     ],
                   ),

@@ -57,6 +57,10 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
     }
 
     emit(ChatLoaded(messages: messages, sessionId: sessionId));
+
+    if (event.initialPrompt != null && event.initialPrompt!.isNotEmpty) {
+      add(ChatMessageSent(content: event.initialPrompt!));
+    }
   }
 
   Future<void> _onMessageSent(

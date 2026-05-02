@@ -1,9 +1,9 @@
 # Active Context — Golden Chicken Frontend
 
 ## Current focus
-Sprint 6 is complete. The app now has full Live AI audio/camera integration (PCM recording at 16kHz, playback at 24kHz, camera frame capture at ≤1 FPS), offline write queues (Hive-backed mutation queue with auto-sync on reconnect), bundled fonts (Plus Jakarta Sans + Hind Siliguri loaded locally instead of via google_fonts network), shed picker in production record screens (replaces hardcoded 'default'), and unit tests for critical flows (auth, production, tasks blocs).
+Sprint 6 + API contract alignment complete. All frontend data contracts now match the running backend (devtunnel at dplss5n1-8000.inc1.devtunnels.ms). Changes span 20+ files: endpoint paths, field names, HTTP methods, envelope parsing, expanded enums, and new fields. All 18 tests pass, zero analysis errors.
 
-**Next up: Sprint 7** — End-to-end polish, CI/CD, and launch readiness.
+**Next up: Sprint 7** — End-to-end integration testing, CI/CD, and launch readiness.
 
 ## Most important decisions already made
 - **Feature-first Clean Architecture** across all features (auth, chat, health, production, market, tasks, profile, insights, live_ai)

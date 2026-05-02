@@ -7,6 +7,7 @@ class EggRecordModel extends EggRecord {
     required super.date,
     required super.totalEggs,
     super.brokenEggs,
+    super.soldEggs,
     super.notes,
   });
 
@@ -14,18 +15,19 @@ class EggRecordModel extends EggRecord {
     return EggRecordModel(
       id: json['id'] as String,
       shedId: json['shed_id'] as String,
-      date: DateTime.parse(json['date'] as String),
+      date: DateTime.parse(json['record_date'] as String),
       totalEggs: (json['total_eggs'] as num).toInt(),
       brokenEggs: (json['broken_eggs'] as num?)?.toInt() ?? 0,
+      soldEggs: (json['sold_eggs'] as num?)?.toInt() ?? 0,
       notes: json['notes'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() => {
-        'shed_id': shedId,
-        'date': date.toIso8601String().split('T').first,
+        'record_date': date.toIso8601String().split('T').first,
         'total_eggs': totalEggs,
         'broken_eggs': brokenEggs,
+        'sold_eggs': soldEggs,
         if (notes != null) 'notes': notes,
       };
 }

@@ -25,6 +25,6 @@ class InsightsRemoteDatasourceImpl implements InsightsRemoteDatasource {
 
   @override
   Future<void> acknowledgeInsight(String insightId) async {
-    await _dio.patch<void>('${ApiEndpoints.insights}/$insightId/acknowledge');
+    await _dio.post<void>(ApiEndpoints.acknowledgeInsight(insightId));
   }
 }

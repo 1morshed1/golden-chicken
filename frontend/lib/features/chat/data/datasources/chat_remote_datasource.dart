@@ -32,10 +32,33 @@ class ChatRemoteDatasourceImpl implements ChatRemoteDatasource {
 
   @override
   Future<ChatSessionModel> createSession() async {
-    final response = await _dio.post<Map<String, dynamic>>(
-      ApiEndpoints.chatSessions,
-    );
-    return ChatSessionModel.fromJson(response.data!);
+    const maxRetries = 3;
+    for (var attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        final response = await _dio.post<Map<String, dynamic>>(
+          ApiEndpoints.chatSessions,
+          data: <String, dynamic>{},
+          options: Options(
+            sendTimeout: const Duration(seconds: 10),
+            receiveTimeout: const Duration(seconds: 15),
+          ),
+        );
+        return ChatSessionModel.fromJson(
+          response.data!['data'] as Map<String, dynamic>,
+        );
+      } on DioException catch (e) {
+        if (attempt == maxRetries) rethrow;
+        if (e.type == DioExceptionType.connectionTimeout ||
+            e.type == DioExceptionType.receiveTimeout ||
+            e.type == DioExceptionType.sendTimeout ||
+            e.type == DioExceptionType.connectionError) {
+          await Future<void>.delayed(Duration(seconds: attempt));
+          continue;
+        }
+        rethrow;
+      }
+    }
+    throw StateError('Unreachable');
   }
 
   @override

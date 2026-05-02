@@ -1,10 +1,21 @@
 import 'package:equatable/equatable.dart';
 
-enum TaskType { feeding, cleaning, vaccination, inspection, other }
+enum TaskType {
+  feeding,
+  vaccination,
+  medicine,
+  cleaning,
+  examination,
+  shedCheck,
+  eggCollection,
+  waterCheck,
+  biosecurity,
+  other,
+}
 
 enum TaskStatus { pending, completed, overdue }
 
-enum Recurrence { none, daily, weekly, custom }
+enum Recurrence { none, daily, weekly, monthly, custom }
 
 class FarmTask extends Equatable {
   const FarmTask({
@@ -15,6 +26,7 @@ class FarmTask extends Equatable {
     required this.dueDate,
     this.dueTime,
     this.recurrence = Recurrence.none,
+    this.priority = 5,
     this.description,
     this.completedAt,
   });
@@ -26,6 +38,7 @@ class FarmTask extends Equatable {
   final DateTime dueDate;
   final String? dueTime;
   final Recurrence recurrence;
+  final int priority;
   final String? description;
   final DateTime? completedAt;
 

@@ -86,6 +86,18 @@ async def delete_session(
     await chat_service.delete_session(db, session_id, user)
 
 
+@router.get("/sessions/{session_id}/messages")
+async def list_messages(
+    session_id: str,
+    user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> SuccessResponse[list[ChatMessageResponse]]:
+    messages = await chat_service.get_session_messages(db, session_id, user)
+    return SuccessResponse(
+        data=[ChatMessageResponse.model_validate(m) for m in messages]
+    )
+
+
 @router.post("/sessions/{session_id}/messages")
 async def send_message(
     session_id: str,

@@ -8,5 +8,6 @@ class GetSheds {
 
   final ProductionRepository _repository;
 
-  Future<Either<Failure, List<Shed>>> call() => _repository.getSheds();
+  Future<Either<Failure, List<Shed>>> call(String farmId) =>
+      _repository.getSheds(farmId);
 }

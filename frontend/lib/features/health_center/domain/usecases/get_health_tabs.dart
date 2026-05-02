@@ -8,5 +8,6 @@ class GetHealthTabs {
 
   final HealthRepository _repository;
 
-  Future<Either<Failure, List<HealthTab>>> call() => _repository.getHealthTabs();
+  Future<Either<Failure, List<HealthItem>>> call() =>
+      _repository.getHealthItems();
 }

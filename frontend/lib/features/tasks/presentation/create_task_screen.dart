@@ -188,6 +188,7 @@ class _CreateTaskFormState extends State<_CreateTaskForm> {
         Recurrence.none => 'None',
         Recurrence.daily => 'Daily',
         Recurrence.weekly => 'Weekly',
+        Recurrence.monthly => 'Monthly',
         Recurrence.custom => 'Custom',
       };
 }

@@ -7,6 +7,7 @@ class HealthItemModel extends HealthItem {
     required super.nameBn,
     required super.severity,
     required super.symptomCount,
+    super.category,
     super.icon,
     super.description,
   });
@@ -14,10 +15,11 @@ class HealthItemModel extends HealthItem {
   factory HealthItemModel.fromJson(Map<String, dynamic> json) {
     return HealthItemModel(
       id: json['id'] as String,
-      name: json['name'] as String,
-      nameBn: (json['name_bn'] ?? json['name']) as String,
+      name: (json['disease_name_en'] ?? json['name'] ?? '') as String,
+      nameBn: (json['disease_name_bn'] ?? json['name_bn'] ?? '') as String,
       severity: _parseSeverity(json['severity'] as String?),
       symptomCount: (json['symptom_count'] as num?)?.toInt() ?? 0,
+      category: json['category'] as String?,
       icon: json['icon'] as String?,
       description: json['description'] as String?,
     );
@@ -28,39 +30,5 @@ class HealthItemModel extends HealthItem {
         'high' => Severity.high,
         'medium' => Severity.medium,
         _ => Severity.low,
-      };
-}
-
-class HealthTabModel extends HealthTab {
-  const HealthTabModel({
-    required super.id,
-    required super.name,
-    required super.nameBn,
-    required super.type,
-    required super.items,
-  });
-
-  factory HealthTabModel.fromJson(Map<String, dynamic> json) {
-    final items = (json['items'] as List<dynamic>?)
-            ?.map(
-              (e) => HealthItemModel.fromJson(e as Map<String, dynamic>),
-            )
-            .toList() ??
-        [];
-
-    return HealthTabModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      nameBn: (json['name_bn'] ?? json['name']) as String,
-      type: _parseType(json['type'] as String?),
-      items: items,
-    );
-  }
-
-  static HealthTabType _parseType(String? value) => switch (value) {
-        'vaccines' => HealthTabType.vaccines,
-        'emergency' => HealthTabType.emergency,
-        'diagnosis' => HealthTabType.diagnosis,
-        _ => HealthTabType.diseases,
       };
 }

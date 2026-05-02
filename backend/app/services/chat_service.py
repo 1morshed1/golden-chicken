@@ -57,6 +57,16 @@ class ChatService:
             raise AuthorizationError()
         return session
 
+    async def get_session_messages(
+        self, db: AsyncSession, session_id: str, user: User
+    ) -> list[ChatMessage]:
+        session = await session_repo.get_by_id(db, session_id)
+        if not session:
+            raise NotFoundError("Chat session")
+        if session.user_id != user.id:
+            raise AuthorizationError()
+        return await message_repo.get_session_messages(db, session_id)
+
     async def update_session_title(
         self, db: AsyncSession, session_id: str, user: User, title: str
     ) -> ChatSession:
@@ -281,8 +291,9 @@ class ChatService:
         return await message_repo.update_feedback(db, message, feedback)
 
     def _format_history(self, messages: list[ChatMessage]) -> list[dict]:
+        role_map = {MessageRole.USER: "user", MessageRole.ASSISTANT: "model", MessageRole.SYSTEM: "user"}
         return [
-            {"role": msg.role.value if msg.role != MessageRole.SYSTEM else "user", "content": msg.content}
+            {"role": role_map.get(msg.role, "user"), "content": msg.content}
             for msg in messages
         ]
 

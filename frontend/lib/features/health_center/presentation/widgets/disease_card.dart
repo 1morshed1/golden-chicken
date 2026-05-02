@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:golden_chicken/core/constants/app_colors.dart';
-import 'package:golden_chicken/core/constants/app_radius.dart';
 import 'package:golden_chicken/core/constants/app_spacing.dart';
-import 'package:golden_chicken/core/l10n/l10n.dart';
 import 'package:golden_chicken/features/health_center/domain/entities/health_tab.dart';
 
 class DiseaseCard extends StatelessWidget {
@@ -17,23 +15,21 @@ class DiseaseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = context.l10n;
     final severityColor = _severityColor(item.severity);
     final severityLabel = _severityLabel(item.severity);
     final locale = Localizations.localeOf(context).languageCode;
     final displayName = locale == 'bn' ? item.nameBn : item.name;
+    final displayNameSecondary = locale == 'bn' ? item.name : item.nameBn;
+    final iconData = _diseaseIcon(item.icon);
 
     return Container(
       decoration: BoxDecoration(
         color: AppColors.card,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border(
-          left: BorderSide(color: severityColor, width: 3),
-        ),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(13),
-            blurRadius: 6,
+            color: Colors.black.withAlpha(10),
+            blurRadius: 10,
             offset: const Offset(0, 2),
           ),
         ],
@@ -43,74 +39,97 @@ class DiseaseCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: [
-              Text(
-                item.icon ?? '🦠',
-                style: const TextStyle(fontSize: 24),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  displayName,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: 2,
-                ),
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: severityColor.withAlpha(26),
-                  borderRadius: BorderRadius.circular(AppRadius.chip),
+                  color: iconData.bgColor,
+                  shape: BoxShape.circle,
                 ),
-                child: Text(
-                  severityLabel,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: severityColor,
+                child: Center(
+                  child: Text(
+                    iconData.emoji,
+                    style: const TextStyle(fontSize: 22),
                   ),
                 ),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
-                '${item.symptomCount} ${l10n.symptoms}',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
+              const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: severityColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  severityLabel,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          SizedBox(
-            width: double.infinity,
-            height: 32,
-            child: OutlinedButton(
-              onPressed: onAskAi,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary),
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.sm),
+          Text(
+            displayName,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 14,
                 ),
-                textStyle: const TextStyle(
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            displayNameSecondary,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const Spacer(),
+          Row(
+            children: [
+              Text(
+                '${item.symptomCount} symptoms',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                    ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              GestureDetector(
+                onTap: onAskAi,
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Ask AI',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    SizedBox(width: 2),
+                    Icon(
+                      Icons.arrow_forward,
+                      size: 14,
+                      color: AppColors.primary,
+                    ),
+                  ],
                 ),
               ),
-              child: Text(l10n.askAi),
-            ),
+            ],
           ),
         ],
       ),
@@ -130,4 +149,24 @@ class DiseaseCard extends StatelessWidget {
         Severity.medium => 'Medium',
         Severity.low => 'Low',
       };
+
+  _DiseaseIconData _diseaseIcon(String? icon) {
+    return switch (icon) {
+      'virus' => const _DiseaseIconData('🦠', Color(0xFFE8F5E9)),
+      'warning' || 'alert' => const _DiseaseIconData('⚠️', Color(0xFFFFF8E1)),
+      'bacteria' => const _DiseaseIconData('🔬', Color(0xFFE3F2FD)),
+      'pill' || 'medicine' => const _DiseaseIconData('💊', Color(0xFFFCE4EC)),
+      'bug' => const _DiseaseIconData('🐛', Color(0xFFFFF3E0)),
+      'shield' => const _DiseaseIconData('🛡️', Color(0xFFE8EAF6)),
+      'syringe' || 'vaccine' => const _DiseaseIconData('💉', Color(0xFFE0F7FA)),
+      'thermometer' => const _DiseaseIconData('🌡️', Color(0xFFFFEBEE)),
+      _ => const _DiseaseIconData('🦠', Color(0xFFE8F5E9)),
+    };
+  }
+}
+
+class _DiseaseIconData {
+  const _DiseaseIconData(this.emoji, this.bgColor);
+  final String emoji;
+  final Color bgColor;
 }

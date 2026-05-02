@@ -12,10 +12,10 @@ class HealthRepositoryImpl implements HealthRepository {
   final HealthRemoteDatasource _remote;
 
   @override
-  Future<Either<Failure, List<HealthTab>>> getHealthTabs() async {
+  Future<Either<Failure, List<HealthItem>>> getHealthItems() async {
     try {
-      final tabs = await _remote.getHealthTabs();
-      return Right(tabs);
+      final items = await _remote.getHealthItems();
+      return Right(items);
     } on DioException catch (e) {
       return Left(_mapDioError(e));
     }
@@ -24,14 +24,15 @@ class HealthRepositoryImpl implements HealthRepository {
   @override
   Future<Either<Failure, String>> askHealthQuestion({
     required String tabId,
-    required String question,
+    required String language,
   }) async {
     try {
-      final sessionId = await _remote.askHealthQuestion(
+      final data = await _remote.askHealthQuestion(
         tabId: tabId,
-        question: question,
+        language: language,
       );
-      return Right(sessionId);
+      final session = data['session'] as Map<String, dynamic>;
+      return Right(session['id'] as String);
     } on DioException catch (e) {
       return Left(_mapDioError(e));
     }

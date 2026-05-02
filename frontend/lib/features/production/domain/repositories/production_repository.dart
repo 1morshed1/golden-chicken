@@ -6,7 +6,7 @@ import 'package:golden_chicken/features/production/domain/entities/flock_summary
 import 'package:golden_chicken/features/production/domain/entities/shed.dart';
 
 abstract class ProductionRepository {
-  Future<Either<Failure, List<Shed>>> getSheds();
+  Future<Either<Failure, List<Shed>>> getSheds(String farmId);
 
   Future<Either<Failure, FlockSummary>> getFlockOverview();
 
@@ -17,6 +17,7 @@ abstract class ProductionRepository {
     required DateTime date,
     required int totalEggs,
     int brokenEggs = 0,
+    int soldEggs = 0,
     String? notes,
   });
 
@@ -27,9 +28,9 @@ abstract class ProductionRepository {
   Future<Either<Failure, ChickenRecord>> addChickenRecord({
     required String shedId,
     required DateTime date,
-    required int mortality,
-    int culled = 0,
-    int sold = 0,
+    required int totalBirds,
+    int additions = 0,
+    int mortality = 0,
     String? notes,
   });
 }

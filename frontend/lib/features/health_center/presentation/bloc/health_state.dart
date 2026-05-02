@@ -18,42 +18,47 @@ final class HealthLoading extends HealthState {
 
 final class HealthLoaded extends HealthState {
   const HealthLoaded({
-    required this.tabs,
-    required this.selectedType,
-    this.searchQuery = '',
+    required this.items,
+    this.selectedCategory,
+    this.isAskingAi = false,
+    this.askAiError,
   });
 
-  final List<HealthTab> tabs;
-  final HealthTabType selectedType;
-  final String searchQuery;
+  final List<HealthItem> items;
+  final String? selectedCategory;
+  final bool isAskingAi;
+  final String? askAiError;
 
   List<HealthItem> get filteredItems {
-    final tab = tabs.where((t) => t.type == selectedType).firstOrNull;
-    if (tab == null) return [];
-    if (searchQuery.isEmpty) return tab.items;
-    final q = searchQuery.toLowerCase();
-    return tab.items
-        .where(
-          (item) =>
-              item.name.toLowerCase().contains(q) ||
-              item.nameBn.contains(q),
-        )
-        .toList();
+    if (selectedCategory == null) return items;
+    return items.where((i) => i.category == selectedCategory).toList();
+  }
+
+  List<String> get categories {
+    return items
+        .map((i) => i.category)
+        .whereType<String>()
+        .toSet()
+        .toList()
+      ..sort();
   }
 
   HealthLoaded copyWith({
-    List<HealthTab>? tabs,
-    HealthTabType? selectedType,
-    String? searchQuery,
+    List<HealthItem>? items,
+    String? Function()? selectedCategory,
+    bool? isAskingAi,
+    String? Function()? askAiError,
   }) =>
       HealthLoaded(
-        tabs: tabs ?? this.tabs,
-        selectedType: selectedType ?? this.selectedType,
-        searchQuery: searchQuery ?? this.searchQuery,
+        items: items ?? this.items,
+        selectedCategory:
+            selectedCategory != null ? selectedCategory() : this.selectedCategory,
+        isAskingAi: isAskingAi ?? this.isAskingAi,
+        askAiError: askAiError != null ? askAiError() : this.askAiError,
       );
 
   @override
-  List<Object?> get props => [tabs, selectedType, searchQuery];
+  List<Object?> get props => [items, selectedCategory, isAskingAi, askAiError];
 }
 
 final class HealthError extends HealthState {
@@ -62,8 +67,4 @@ final class HealthError extends HealthState {
 
   @override
   List<Object?> get props => [message];
-}
-
-final class HealthAskAiLoading extends HealthState {
-  const HealthAskAiLoading();
 }

@@ -18,9 +18,9 @@ class ProductionRepositoryImpl implements ProductionRepository {
   final ProductionRemoteDatasource _remote;
 
   @override
-  Future<Either<Failure, List<Shed>>> getSheds() async {
+  Future<Either<Failure, List<Shed>>> getSheds(String farmId) async {
     try {
-      final sheds = await _remote.getSheds();
+      final sheds = await _remote.getSheds(farmId);
       return Right(sheds);
     } on DioException catch (e) {
       return Left(_mapDioError(e));
@@ -55,6 +55,7 @@ class ProductionRepositoryImpl implements ProductionRepository {
     required DateTime date,
     required int totalEggs,
     int brokenEggs = 0,
+    int soldEggs = 0,
     String? notes,
   }) async {
     try {
@@ -64,9 +65,10 @@ class ProductionRepositoryImpl implements ProductionRepository {
         date: date,
         totalEggs: totalEggs,
         brokenEggs: brokenEggs,
+        soldEggs: soldEggs,
         notes: notes,
       );
-      final result = await _remote.addEggRecord(model);
+      final result = await _remote.addEggRecord(shedId, model);
       return Right(result);
     } on DioException catch (e) {
       return Left(_mapDioError(e));
@@ -89,9 +91,9 @@ class ProductionRepositoryImpl implements ProductionRepository {
   Future<Either<Failure, ChickenRecord>> addChickenRecord({
     required String shedId,
     required DateTime date,
-    required int mortality,
-    int culled = 0,
-    int sold = 0,
+    required int totalBirds,
+    int additions = 0,
+    int mortality = 0,
     String? notes,
   }) async {
     try {
@@ -99,12 +101,12 @@ class ProductionRepositoryImpl implements ProductionRepository {
         id: '',
         shedId: shedId,
         date: date,
+        totalBirds: totalBirds,
+        additions: additions,
         mortality: mortality,
-        culled: culled,
-        sold: sold,
         notes: notes,
       );
-      final result = await _remote.addChickenRecord(model);
+      final result = await _remote.addChickenRecord(shedId, model);
       return Right(result);
     } on DioException catch (e) {
       return Left(_mapDioError(e));

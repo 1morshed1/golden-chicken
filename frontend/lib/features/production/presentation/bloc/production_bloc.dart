@@ -45,7 +45,7 @@ class ProductionBloc extends Bloc<ProductionEvent, ProductionState> {
     Emitter<ProductionState> emit,
   ) async {
     emit(const ProductionLoading());
-    final result = await _getSheds();
+    final result = await _getSheds(event.farmId);
     result.fold(
       (failure) => emit(ProductionError(failure.message)),
       (sheds) => emit(ShedsLoaded(sheds)),
@@ -62,6 +62,7 @@ class ProductionBloc extends Bloc<ProductionEvent, ProductionState> {
       date: event.date,
       totalEggs: event.totalEggs,
       brokenEggs: event.brokenEggs,
+      soldEggs: event.soldEggs,
       notes: event.notes,
     );
     result.fold(
@@ -81,9 +82,9 @@ class ProductionBloc extends Bloc<ProductionEvent, ProductionState> {
     final result = await _addChickenRecord(
       shedId: event.shedId,
       date: event.date,
+      totalBirds: event.totalBirds,
+      additions: event.additions,
       mortality: event.mortality,
-      culled: event.culled,
-      sold: event.sold,
       notes: event.notes,
     );
     result.fold(

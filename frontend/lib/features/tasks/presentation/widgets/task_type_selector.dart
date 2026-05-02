@@ -50,7 +50,12 @@ class TaskTypeSelector extends StatelessWidget {
         TaskType.feeding => Icons.restaurant,
         TaskType.cleaning => Icons.cleaning_services,
         TaskType.vaccination => Icons.vaccines,
-        TaskType.inspection => Icons.search,
+        TaskType.medicine => Icons.medication,
+        TaskType.examination => Icons.search,
+        TaskType.shedCheck => Icons.house,
+        TaskType.eggCollection => Icons.egg,
+        TaskType.waterCheck => Icons.water_drop,
+        TaskType.biosecurity => Icons.security,
         TaskType.other => Icons.task_alt,
       };
 
@@ -58,7 +63,12 @@ class TaskTypeSelector extends StatelessWidget {
         TaskType.feeding => 'Feeding',
         TaskType.cleaning => 'Cleaning',
         TaskType.vaccination => 'Vaccination',
-        TaskType.inspection => 'Inspection',
+        TaskType.medicine => 'Medicine',
+        TaskType.examination => 'Examination',
+        TaskType.shedCheck => 'Shed Check',
+        TaskType.eggCollection => 'Egg Collection',
+        TaskType.waterCheck => 'Water Check',
+        TaskType.biosecurity => 'Biosecurity',
         TaskType.other => 'Other',
       };
 }

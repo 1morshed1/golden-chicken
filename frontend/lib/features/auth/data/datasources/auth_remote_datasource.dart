@@ -15,7 +15,9 @@ abstract class AuthRemoteDatasource {
     required String password,
   });
 
-  Future<AuthResponseModel> refreshToken(String refreshToken);
+  Future<({String accessToken, String refreshToken})> refreshToken(
+    String refreshToken,
+  );
 
   Future<void> logout(String refreshToken);
 
@@ -36,7 +38,9 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
       ApiEndpoints.login,
       data: {'email': email, 'password': password},
     );
-    return AuthResponseModel.fromJson(response.data!);
+    return AuthResponseModel.fromJson(
+      response.data!['data'] as Map<String, dynamic>,
+    );
   }
 
   @override
@@ -53,16 +57,24 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
         'password': password,
       },
     );
-    return AuthResponseModel.fromJson(response.data!);
+    return AuthResponseModel.fromJson(
+      response.data!['data'] as Map<String, dynamic>,
+    );
   }
 
   @override
-  Future<AuthResponseModel> refreshToken(String refreshToken) async {
+  Future<({String accessToken, String refreshToken})> refreshToken(
+    String refreshToken,
+  ) async {
     final response = await _dio.post<Map<String, dynamic>>(
       ApiEndpoints.refresh,
       data: {'refresh_token': refreshToken},
     );
-    return AuthResponseModel.fromJson(response.data!);
+    final data = response.data!['data'] as Map<String, dynamic>;
+    return (
+      accessToken: data['access_token'] as String,
+      refreshToken: data['refresh_token'] as String,
+    );
   }
 
   @override
@@ -78,6 +90,8 @@ class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
     final response = await _dio.get<Map<String, dynamic>>(
       ApiEndpoints.profile,
     );
-    return UserModel.fromJson(response.data!);
+    return UserModel.fromJson(
+      response.data!['data'] as Map<String, dynamic>,
+    );
   }
 }

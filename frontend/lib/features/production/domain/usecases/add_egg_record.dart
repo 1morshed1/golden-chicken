@@ -13,6 +13,7 @@ class AddEggRecord {
     required DateTime date,
     required int totalEggs,
     int brokenEggs = 0,
+    int soldEggs = 0,
     String? notes,
   }) =>
       _repository.addEggRecord(
@@ -20,6 +21,7 @@ class AddEggRecord {
         date: date,
         totalEggs: totalEggs,
         brokenEggs: brokenEggs,
+        soldEggs: soldEggs,
         notes: notes,
       );
 }

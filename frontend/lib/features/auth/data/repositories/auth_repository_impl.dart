@@ -66,13 +66,14 @@ class AuthRepositoryImpl implements AuthRepository {
       final token = await _local.getRefreshToken();
       if (token == null) return const Left(AuthFailure('No refresh token'));
 
-      final response = await _remote.refreshToken(token);
+      final tokens = await _remote.refreshToken(token);
       await _local.saveTokens(
-        accessToken: response.accessToken,
-        refreshToken: response.refreshToken,
+        accessToken: tokens.accessToken,
+        refreshToken: tokens.refreshToken,
       );
-      await _local.saveUser(response.user);
-      return Right(response.user);
+      final user = await _remote.getCurrentUser();
+      await _local.saveUser(user);
+      return Right(user);
     } on DioException catch (e) {
       return Left(_mapDioError(e));
     }

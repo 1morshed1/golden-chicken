@@ -7,6 +7,7 @@ class EggRecord extends Equatable {
     required this.date,
     required this.totalEggs,
     this.brokenEggs = 0,
+    this.soldEggs = 0,
     this.notes,
   });
 
@@ -15,6 +16,7 @@ class EggRecord extends Equatable {
   final DateTime date;
   final int totalEggs;
   final int brokenEggs;
+  final int soldEggs;
   final String? notes;
 
   int get goodEggs => totalEggs - brokenEggs;

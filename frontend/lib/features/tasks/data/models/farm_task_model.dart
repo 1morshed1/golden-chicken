@@ -9,6 +9,7 @@ class FarmTaskModel extends FarmTask {
     required super.dueDate,
     super.dueTime,
     super.recurrence,
+    super.priority,
     super.description,
     super.completedAt,
   });
@@ -17,11 +18,14 @@ class FarmTaskModel extends FarmTask {
     return FarmTaskModel(
       id: json['id'] as String,
       title: json['title'] as String,
-      type: _parseType(json['type'] as String?),
-      status: _parseStatus(json['status'] as String?),
+      type: _parseType(json['task_type'] as String?),
+      status: json['is_completed'] == true
+          ? TaskStatus.completed
+          : TaskStatus.pending,
       dueDate: DateTime.parse(json['due_date'] as String),
       dueTime: json['due_time'] as String?,
       recurrence: _parseRecurrence(json['recurrence'] as String?),
+      priority: (json['priority'] as num?)?.toInt() ?? 5,
       description: json['description'] as String?,
       completedAt: json['completed_at'] != null
           ? DateTime.tryParse(json['completed_at'] as String)
@@ -31,30 +35,44 @@ class FarmTaskModel extends FarmTask {
 
   Map<String, dynamic> toJson() => {
         'title': title,
-        'type': type.name,
+        'task_type': _typeToString(type),
         'due_date': dueDate.toIso8601String().split('T').first,
         if (dueTime != null) 'due_time': dueTime,
         'recurrence': recurrence.name,
+        'priority': priority,
         if (description != null) 'description': description,
       };
 
   static TaskType _parseType(String? value) => switch (value) {
         'feeding' => TaskType.feeding,
-        'cleaning' => TaskType.cleaning,
         'vaccination' => TaskType.vaccination,
-        'inspection' => TaskType.inspection,
+        'medicine' => TaskType.medicine,
+        'cleaning' => TaskType.cleaning,
+        'examination' => TaskType.examination,
+        'shed_check' => TaskType.shedCheck,
+        'egg_collection' => TaskType.eggCollection,
+        'water_check' => TaskType.waterCheck,
+        'biosecurity' => TaskType.biosecurity,
         _ => TaskType.other,
       };
 
-  static TaskStatus _parseStatus(String? value) => switch (value) {
-        'completed' => TaskStatus.completed,
-        'overdue' => TaskStatus.overdue,
-        _ => TaskStatus.pending,
+  static String _typeToString(TaskType type) => switch (type) {
+        TaskType.feeding => 'feeding',
+        TaskType.vaccination => 'vaccination',
+        TaskType.medicine => 'medicine',
+        TaskType.cleaning => 'cleaning',
+        TaskType.examination => 'examination',
+        TaskType.shedCheck => 'shed_check',
+        TaskType.eggCollection => 'egg_collection',
+        TaskType.waterCheck => 'water_check',
+        TaskType.biosecurity => 'biosecurity',
+        TaskType.other => 'other',
       };
 
   static Recurrence _parseRecurrence(String? value) => switch (value) {
         'daily' => Recurrence.daily,
         'weekly' => Recurrence.weekly,
+        'monthly' => Recurrence.monthly,
         'custom' => Recurrence.custom,
         _ => Recurrence.none,
       };

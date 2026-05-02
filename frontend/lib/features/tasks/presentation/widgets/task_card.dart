@@ -134,7 +134,12 @@ class TaskCard extends StatelessWidget {
         TaskType.feeding => Icons.restaurant,
         TaskType.cleaning => Icons.cleaning_services,
         TaskType.vaccination => Icons.vaccines,
-        TaskType.inspection => Icons.search,
+        TaskType.medicine => Icons.medication,
+        TaskType.examination => Icons.search,
+        TaskType.shedCheck => Icons.house,
+        TaskType.eggCollection => Icons.egg,
+        TaskType.waterCheck => Icons.water_drop,
+        TaskType.biosecurity => Icons.security,
         TaskType.other => Icons.task_alt,
       };
 }

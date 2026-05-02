@@ -33,8 +33,8 @@ class _LoginScreenState extends State<LoginScreen> {
   void _onLogin() {
     if (!_formKey.currentState!.validate()) return;
 
-    final phone = _phoneController.text.trim();
-    // Map phone to email format for backend compatibility
+    var phone = _phoneController.text.trim();
+    if (!phone.startsWith('0')) phone = '0$phone';
     final email = '$phone@goldenchicken.ai';
 
     context.read<AuthBloc>().add(
@@ -139,10 +139,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(l10n.noAccount),
-                      AppButton(
-                        label: l10n.signUp,
-                        variant: AppButtonVariant.text,
+                      TextButton(
                         onPressed: () => context.go('/auth/signup'),
+                        child: Text(l10n.signUp),
                       ),
                     ],
                   ),

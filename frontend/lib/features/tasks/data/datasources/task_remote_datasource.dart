@@ -37,8 +37,8 @@ class TaskRemoteDatasourceImpl implements TaskRemoteDatasource {
 
   @override
   Future<FarmTaskModel> completeTask(String taskId) async {
-    final response = await _dio.patch<Map<String, dynamic>>(
-      '${ApiEndpoints.tasks}/$taskId/complete',
+    final response = await _dio.post<Map<String, dynamic>>(
+      ApiEndpoints.completeTask(taskId),
     );
     return FarmTaskModel.fromJson(
       response.data!['data'] as Map<String, dynamic>,

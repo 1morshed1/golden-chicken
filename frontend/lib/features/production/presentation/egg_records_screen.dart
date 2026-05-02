@@ -18,7 +18,8 @@ class EggRecordsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<ProductionBloc>()..add(const ShedsRequested()),
+      create: (_) =>
+          sl<ProductionBloc>()..add(const ShedsRequested('default')),
       child: const _EggRecordForm(),
     );
   }
@@ -35,6 +36,7 @@ class _EggRecordFormState extends State<_EggRecordForm> {
   final _formKey = GlobalKey<FormState>();
   final _totalController = TextEditingController();
   final _brokenController = TextEditingController();
+  final _soldController = TextEditingController();
   final _notesController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   String? _selectedShedId;
@@ -44,6 +46,7 @@ class _EggRecordFormState extends State<_EggRecordForm> {
   void dispose() {
     _totalController.dispose();
     _brokenController.dispose();
+    _soldController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -113,6 +116,13 @@ class _EggRecordFormState extends State<_EggRecordForm> {
               ),
               const SizedBox(height: AppSpacing.lg),
               AppTextField(
+                controller: _soldController,
+                label: 'Sold Eggs',
+                hint: '0',
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              AppTextField(
                 controller: _notesController,
                 label: 'Notes',
                 hint: 'Optional notes',
@@ -143,6 +153,7 @@ class _EggRecordFormState extends State<_EggRecordForm> {
             date: _selectedDate,
             totalEggs: int.parse(_totalController.text),
             brokenEggs: int.tryParse(_brokenController.text) ?? 0,
+            soldEggs: int.tryParse(_soldController.text) ?? 0,
             notes: _notesController.text.isEmpty
                 ? null
                 : _notesController.text,

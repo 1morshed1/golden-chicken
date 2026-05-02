@@ -8,11 +8,12 @@ sealed class ChatEvent extends Equatable {
 }
 
 final class ChatSessionStarted extends ChatEvent {
-  const ChatSessionStarted(this.sessionId);
+  const ChatSessionStarted(this.sessionId, {this.initialPrompt});
   final String? sessionId;
+  final String? initialPrompt;
 
   @override
-  List<Object?> get props => [sessionId];
+  List<Object?> get props => [sessionId, initialPrompt];
 }
 
 final class ChatMessageSent extends ChatEvent {

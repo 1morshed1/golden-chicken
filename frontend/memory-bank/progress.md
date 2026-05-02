@@ -35,19 +35,19 @@
 - **Data**: MarketPriceModel/MarketTipModel/PriceTrendPointModel (JSON), MarketRemoteDatasource (prices, tip, trend with product/period params), MarketRepositoryImpl
 - **Presentation**: MarketBloc (prices + parallel egg/meat trend loading, period toggle), MarketTabScreen (Dhaka region header, 3 price hero cards with ৳ currency and change %, period toggle Today/7d/30d, fl_chart trend chart, AI tip card with confidence), PriceHeroCard widget, PriceTrendChart widget (dual-line fl_chart with legend)
 
-### Tasks (Sprint 4)
-- **Domain**: FarmTask entity (type enum: feeding/cleaning/vaccination/inspection/other, status enum: pending/completed/overdue, recurrence enum: none/daily/weekly/custom), TaskRepository interface, GetTasks/CreateTask/CompleteTask use cases
-- **Data**: FarmTaskModel (JSON with type/status/recurrence parsing, toJson for creation), TaskRemoteDatasource (GET/POST tasks, PATCH complete), TaskRepositoryImpl
-- **Presentation**: TaskBloc (load tasks, complete task, create task with auto-refresh), TaskListScreen (overdue/today/upcoming/completed sections with counts, FAB to create, empty state "All caught up!"), CreateTaskScreen (title, type selector chips, date/time pickers, recurrence chips, notes, save), TaskCard widget (completion circle, type icon, due date, overdue badge, recurrence indicator), TaskTypeSelector widget
+### Tasks (Sprint 4 + API alignment)
+- **Domain**: FarmTask entity (type enum: 10 values including shedCheck/eggCollection/waterCheck/biosecurity, status enum: pending/completed/overdue, recurrence enum: none/daily/weekly/monthly/custom, priority field), TaskRepository interface, GetTasks/CreateTask/CompleteTask use cases
+- **Data**: FarmTaskModel (JSON with task_type/is_completed parsing, toJson for creation), TaskRemoteDatasource (GET/POST tasks, POST complete), TaskRepositoryImpl
+- **Presentation**: TaskBloc (load tasks, complete task, create task with auto-refresh), TaskListScreen, CreateTaskScreen, TaskCard widget (10 type icons), TaskTypeSelector widget (10 types)
 
 ### Profile (Sprint 5)
 - **Domain**: UserProfile entity (loyaltyPoints, loyaltyTier, pointsToNextTier), ProfileRepository, GetProfile/UpdateProfile use cases
 - **Data**: UserProfileModel (JSON), ProfileRemoteDatasource (GET/PATCH /users/me), ProfileRepositoryImpl
 - **Presentation**: ProfileBloc (load + update), ProfileTabScreen (avatar with edit icon, loyalty card with gradient/tier badge/points, preferences: language toggle via LocaleCubit, dark mode via ThemeCubit, notifications, data/history, logout), EditProfileScreen (name/phone/location form)
 
-### Insights (Sprint 5)
-- **Domain**: FarmInsight entity (severity enum: critical/warning/info, action, isAcknowledged), InsightsRepository, GetInsights/AcknowledgeInsight use cases
-- **Data**: FarmInsightModel (JSON with severity parsing), InsightsRemoteDatasource (GET /insights, PATCH /insights/{id}/acknowledge), InsightsRepositoryImpl
+### Insights (Sprint 5 + API alignment)
+- **Domain**: FarmInsight entity (severity enum: critical/warning/info, proposed_action, isAcknowledged), InsightsRepository, GetInsights/AcknowledgeInsight use cases
+- **Data**: FarmInsightModel (JSON with severity parsing, proposed_action field), InsightsRemoteDatasource (GET /insights, POST /insights/{id}/acknowledge), InsightsRepositoryImpl
 - **Presentation**: InsightsBloc (load + acknowledge with auto-refresh), InsightsScreen (active/acknowledged sections, pull-to-refresh, empty state), InsightCard widget (severity-colored left border, severity icon, action badge, acknowledge button)
 
 ### Live AI (Sprint 5 + 6)
@@ -83,6 +83,7 @@
 - **Sprint 4**: ✅ COMPLETE — Market Insights (fl_chart) + Tasks (CRUD + recurrence)
 - **Sprint 5**: ✅ COMPLETE — Profile (loyalty card, preferences, edit) + Insights (severity cards, acknowledge) + Live AI (WebSocket state machine, transcript overlay)
 - **Sprint 6**: ✅ COMPLETE — Live AI audio/camera services, offline mutation queue, bundled fonts, shed picker, unit tests (17 passing)
+- **API Contract Alignment**: ✅ COMPLETE — All frontend models, datasources, repos, blocs, and UI matched to backend OpenAPI spec (20+ files updated)
 - **Sprint 7**: Not started
 
 ## Known issues / watch-outs

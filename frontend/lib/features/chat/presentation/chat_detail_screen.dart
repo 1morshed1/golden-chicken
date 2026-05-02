@@ -21,14 +21,8 @@ class ChatDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) {
-        final bloc = sl<ChatBloc>()
-          ..add(ChatSessionStarted(sessionId));
-        if (initialPrompt != null && initialPrompt!.isNotEmpty) {
-          bloc.add(ChatMessageSent(content: initialPrompt!));
-        }
-        return bloc;
-      },
+      create: (_) => sl<ChatBloc>()
+        ..add(ChatSessionStarted(sessionId, initialPrompt: initialPrompt)),
       child: const _ChatDetailView(),
     );
   }

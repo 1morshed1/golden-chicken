@@ -9,7 +9,7 @@ class AskHealthQuestion {
 
   Future<Either<Failure, String>> call({
     required String tabId,
-    required String question,
+    required String language,
   }) =>
-      _repository.askHealthQuestion(tabId: tabId, question: question);
+      _repository.askHealthQuestion(tabId: tabId, language: language);
 }

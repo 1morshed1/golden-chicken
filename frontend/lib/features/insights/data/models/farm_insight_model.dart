@@ -17,7 +17,7 @@ class FarmInsightModel extends FarmInsight {
       title: json['title'] as String,
       description: json['description'] as String,
       severity: _parseSeverity(json['severity'] as String?),
-      action: json['action'] as String?,
+      action: json['proposed_action'] as String?,
       isAcknowledged: (json['is_acknowledged'] as bool?) ?? false,
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'] as String)

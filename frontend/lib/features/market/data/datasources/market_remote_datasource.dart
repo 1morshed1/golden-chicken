@@ -43,8 +43,8 @@ class MarketRemoteDatasourceImpl implements MarketRemoteDatasource {
     required String period,
   }) async {
     final response = await _dio.get<Map<String, dynamic>>(
-      '${ApiEndpoints.marketPrices}/trend',
-      queryParameters: {'product': product, 'period': period},
+      ApiEndpoints.marketPriceHistory(product),
+      queryParameters: {'period': period},
     );
     final data = response.data!['data'] as List<dynamic>;
     return data

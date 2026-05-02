@@ -24,7 +24,7 @@ class ProfileRemoteDatasourceImpl implements ProfileRemoteDatasource {
 
   @override
   Future<UserProfileModel> updateProfile(Map<String, dynamic> data) async {
-    final response = await _dio.patch<Map<String, dynamic>>(
+    final response = await _dio.put<Map<String, dynamic>>(
       ApiEndpoints.profile,
       data: data,
     );

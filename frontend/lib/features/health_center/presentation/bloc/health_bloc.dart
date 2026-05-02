@@ -1,5 +1,4 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:golden_chicken/features/health_center/domain/entities/health_tab.dart';
 import 'package:golden_chicken/features/health_center/domain/usecases/ask_health_question.dart';
 import 'package:golden_chicken/features/health_center/domain/usecases/get_health_tabs.dart';
 import 'package:golden_chicken/features/health_center/presentation/bloc/health_event.dart';
@@ -13,13 +12,13 @@ class HealthBloc extends Bloc<HealthEvent, HealthState> {
         _askHealthQuestion = askHealthQuestion,
         super(const HealthInitial()) {
     on<HealthTabsRequested>(_onTabsRequested);
-    on<HealthTabSelected>(_onTabSelected);
-    on<HealthSearchChanged>(_onSearchChanged);
+    on<HealthCategorySelected>(_onCategorySelected);
     on<HealthAskAiRequested>(_onAskAi);
   }
 
   final GetHealthTabs _getHealthTabs;
   final AskHealthQuestion _askHealthQuestion;
+  String language = 'en';
 
   Future<void> _onTabsRequested(
     HealthTabsRequested event,
@@ -29,32 +28,17 @@ class HealthBloc extends Bloc<HealthEvent, HealthState> {
     final result = await _getHealthTabs();
     result.fold(
       (failure) => emit(HealthError(failure.message)),
-      (tabs) {
-        emit(HealthLoaded(
-          tabs: tabs,
-          selectedType: HealthTabType.diseases,
-        ));
-      },
+      (items) => emit(HealthLoaded(items: items)),
     );
   }
 
-  void _onTabSelected(
-    HealthTabSelected event,
+  void _onCategorySelected(
+    HealthCategorySelected event,
     Emitter<HealthState> emit,
   ) {
     final current = state;
     if (current is HealthLoaded) {
-      emit(current.copyWith(selectedType: event.type, searchQuery: ''));
-    }
-  }
-
-  void _onSearchChanged(
-    HealthSearchChanged event,
-    Emitter<HealthState> emit,
-  ) {
-    final current = state;
-    if (current is HealthLoaded) {
-      emit(current.copyWith(searchQuery: event.query));
+      emit(current.copyWith(selectedCategory: () => event.category));
     }
   }
 
@@ -62,28 +46,26 @@ class HealthBloc extends Bloc<HealthEvent, HealthState> {
     HealthAskAiRequested event,
     Emitter<HealthState> emit,
   ) async {
-    final previousState = state;
-    emit(const HealthAskAiLoading());
+    final current = state;
+    if (current is! HealthLoaded) return;
 
-    final question = 'Tell me about ${event.itemName}';
+    emit(current.copyWith(isAskingAi: true, askAiError: () => null));
+
     final result = await _askHealthQuestion(
       tabId: event.tabId,
-      question: question,
+      language: language,
     );
 
     result.fold(
       (failure) {
-        if (previousState is HealthLoaded) {
-          emit(previousState);
-        } else {
-          emit(HealthError(failure.message));
-        }
+        emit(current.copyWith(
+          isAskingAi: false,
+          askAiError: () => failure.message,
+        ));
       },
       (sessionId) {
         _lastAskAiSessionId = sessionId;
-        if (previousState is HealthLoaded) {
-          emit(previousState);
-        }
+        emit(current.copyWith(isAskingAi: false));
       },
     );
   }

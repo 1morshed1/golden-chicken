@@ -11,12 +11,12 @@ class MarketPriceModel extends MarketPrice {
 
   factory MarketPriceModel.fromJson(Map<String, dynamic> json) {
     return MarketPriceModel(
-      product: json['product'] as String,
-      price: (json['price'] as num).toDouble(),
+      product: json['product_name'] as String,
+      price: (json['price_bdt'] as num).toDouble(),
       unit: (json['unit'] as String?) ?? 'unit',
       changePercent: (json['change_percent'] as num?)?.toDouble() ?? 0,
-      updatedAt: json['updated_at'] != null
-          ? DateTime.tryParse(json['updated_at'] as String)
+      updatedAt: json['fetched_at'] != null
+          ? DateTime.tryParse(json['fetched_at'] as String)
           : null,
     );
   }

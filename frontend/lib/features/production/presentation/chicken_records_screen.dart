@@ -18,7 +18,8 @@ class ChickenRecordsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => sl<ProductionBloc>()..add(const ShedsRequested()),
+      create: (_) =>
+          sl<ProductionBloc>()..add(const ShedsRequested('default')),
       child: const _ChickenRecordForm(),
     );
   }
@@ -33,9 +34,9 @@ class _ChickenRecordForm extends StatefulWidget {
 
 class _ChickenRecordFormState extends State<_ChickenRecordForm> {
   final _formKey = GlobalKey<FormState>();
+  final _totalBirdsController = TextEditingController();
+  final _additionsController = TextEditingController();
   final _mortalityController = TextEditingController();
-  final _culledController = TextEditingController();
-  final _soldController = TextEditingController();
   final _notesController = TextEditingController();
   DateTime _selectedDate = DateTime.now();
   String? _selectedShedId;
@@ -43,9 +44,9 @@ class _ChickenRecordFormState extends State<_ChickenRecordForm> {
 
   @override
   void dispose() {
+    _totalBirdsController.dispose();
+    _additionsController.dispose();
     _mortalityController.dispose();
-    _culledController.dispose();
-    _soldController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -96,9 +97,9 @@ class _ChickenRecordFormState extends State<_ChickenRecordForm> {
               ),
               const SizedBox(height: AppSpacing.lg),
               AppTextField(
-                controller: _mortalityController,
-                label: 'Mortality',
-                hint: 'Number of deaths',
+                controller: _totalBirdsController,
+                label: 'Total Birds',
+                hint: 'Current bird count',
                 keyboardType: TextInputType.number,
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Required';
@@ -108,15 +109,15 @@ class _ChickenRecordFormState extends State<_ChickenRecordForm> {
               ),
               const SizedBox(height: AppSpacing.lg),
               AppTextField(
-                controller: _culledController,
-                label: 'Culled',
+                controller: _additionsController,
+                label: 'Additions',
                 hint: '0',
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: AppSpacing.lg),
               AppTextField(
-                controller: _soldController,
-                label: 'Sold',
+                controller: _mortalityController,
+                label: 'Mortality',
                 hint: '0',
                 keyboardType: TextInputType.number,
               ),
@@ -150,9 +151,9 @@ class _ChickenRecordFormState extends State<_ChickenRecordForm> {
           ChickenRecordAdded(
             shedId: _selectedShedId!,
             date: _selectedDate,
-            mortality: int.parse(_mortalityController.text),
-            culled: int.tryParse(_culledController.text) ?? 0,
-            sold: int.tryParse(_soldController.text) ?? 0,
+            totalBirds: int.parse(_totalBirdsController.text),
+            additions: int.tryParse(_additionsController.text) ?? 0,
+            mortality: int.tryParse(_mortalityController.text) ?? 0,
             notes: _notesController.text.isEmpty
                 ? null
                 : _notesController.text,

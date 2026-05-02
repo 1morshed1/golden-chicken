@@ -11,17 +11,17 @@ class AddChickenRecord {
   Future<Either<Failure, ChickenRecord>> call({
     required String shedId,
     required DateTime date,
-    required int mortality,
-    int culled = 0,
-    int sold = 0,
+    required int totalBirds,
+    int additions = 0,
+    int mortality = 0,
     String? notes,
   }) =>
       _repository.addChickenRecord(
         shedId: shedId,
         date: date,
+        totalBirds: totalBirds,
+        additions: additions,
         mortality: mortality,
-        culled: culled,
-        sold: sold,
         notes: notes,
       );
 }

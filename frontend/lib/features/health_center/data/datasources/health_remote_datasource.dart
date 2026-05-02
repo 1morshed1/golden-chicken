@@ -3,10 +3,11 @@ import 'package:golden_chicken/core/constants/api_endpoints.dart';
 import 'package:golden_chicken/features/health_center/data/models/health_tab_model.dart';
 
 abstract class HealthRemoteDatasource {
-  Future<List<HealthTabModel>> getHealthTabs();
-  Future<String> askHealthQuestion({
+  Future<List<HealthItemModel>> getHealthItems();
+  Future<Map<String, dynamic>> askHealthQuestion({
     required String tabId,
-    required String question,
+    required String language,
+    String? additionalContext,
   });
 }
 
@@ -16,27 +17,33 @@ class HealthRemoteDatasourceImpl implements HealthRemoteDatasource {
   final Dio _dio;
 
   @override
-  Future<List<HealthTabModel>> getHealthTabs() async {
+  Future<List<HealthItemModel>> getHealthItems() async {
     final response = await _dio.get<Map<String, dynamic>>(
       ApiEndpoints.healthTabs,
     );
 
     final data = response.data!['data'] as List<dynamic>;
     return data
-        .map((e) => HealthTabModel.fromJson(e as Map<String, dynamic>))
+        .map((e) => HealthItemModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
   @override
-  Future<String> askHealthQuestion({
+  Future<Map<String, dynamic>> askHealthQuestion({
     required String tabId,
-    required String question,
+    required String language,
+    String? additionalContext,
   }) async {
     final response = await _dio.post<Map<String, dynamic>>(
       ApiEndpoints.askHealth(tabId),
-      data: {'question': question},
+      data: {
+        'health_tab_id': tabId,
+        'language': language,
+        if (additionalContext != null) 'additional_context': additionalContext,
+      },
+      options: Options(receiveTimeout: const Duration(seconds: 90)),
     );
 
-    return response.data!['session_id'] as String;
+    return response.data!['data'] as Map<String, dynamic>;
   }
 }
